@@ -54,13 +54,7 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
             if (isMouseDown && isSelected) {
                 const dx = e.clientX - centerX;
                 const dy = centerY - e.clientY;
-                const distance = Math.min(
-                    Math.max(
-                        Math.sqrt(dx ** 2 + dy ** 2),
-                        circle_radius
-                    ),
-                    100 // Maximum length of the arrow
-                );
+                const distance = Math.sqrt(dx ** 2 + dy ** 2)
                 const angle = Math.atan2(dy, dx) * (180 / Math.PI);
                 const angle_corrected = angle < 0 ? 360 + angle : angle;
                 setDistance(distance);

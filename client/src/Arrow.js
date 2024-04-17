@@ -1,11 +1,12 @@
 // src/Arrow.js
 import React from 'react';
 
-const Arrow = ({ centerX, centerY, distance, angle_corrected }) => {
+const Arrow = ({ circle_radius, centerX, centerY, distance, angle_corrected }) => {
+    console.log("Arrow centerX: ", centerX, "centerY: ", centerY, "distance: ", distance, "angle_corrected: ", angle_corrected)
     const arrowStyle = {
         position: 'absolute',
         transformOrigin: '0% 50%',
-        transform: `translate(${centerX}px, ${centerY - distance / 2}px) rotate(${-angle_corrected}deg)`,
+        transform: `translate(50px, ${circle_radius - distance/2}px) rotate(${-angle_corrected}deg)`,
         width: `${distance}px`,
         height: `${distance}px`, // Assuming a fixed height for the arrow SVG
         pointerEvents: 'none',

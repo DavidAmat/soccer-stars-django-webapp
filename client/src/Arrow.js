@@ -13,11 +13,11 @@ const Arrow = ({ circle_radius, centerX, centerY, distance, angle_corrected }) =
     );
 
 
-    console.log("Arrow centerX: ", centerX, "centerY: ", centerY, "arrowLength: ", arrowLength, "angle_corrected: ", angle_corrected, "distance: ", distance)
+    // console.log("Arrow centerX: ", centerX, "centerY: ", centerY, "arrowLength: ", arrowLength, "angle_corrected: ", angle_corrected, "distance: ", distance)
     const arrowStyle = {
         position: 'absolute',
         transformOrigin: '0% 50%',
-        transform: `translate(50px, ${circle_radius - arrowLength/2}px) rotate(${-angle_corrected}deg)`,
+        transform: `translate(${circle_radius}px, ${circle_radius - arrowLength/2}px) rotate(${-angle_corrected}deg)`,
         width: `${arrowLength}px`,
         height: `${arrowLength}px`, // Assuming a fixed height for the arrow SVG
         pointerEvents: 'none',

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Arrow from './Arrow';
 
-const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, index }) => {
+const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, index, triggerMotion }) => {
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [distance, setDistance] = useState(100); // Default distance
     const [angle_corrected, setAngleCorrected] = useState(0); // Default angle
@@ -32,11 +32,6 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
         }
     };
 
-    // Logs
-    useEffect(() => {
-        console.log(`Circle ${index} isSelected state changed: ${isSelected ? 'Selected' : 'Not selected'}, isMouseDown: ${isMouseDown}`);
-    }, [isSelected, isMouseDown, index]);
-
     // Reset isMouseDown state when isSelected state changes
     useEffect(() => {
         if (isSelected) {
@@ -54,9 +49,9 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
             if (isMouseDown && isSelected) {
                 const dx = e.clientX - centerX;
                 const dy = centerY - e.clientY;
-                const distance = Math.sqrt(dx ** 2 + dy ** 2)
-                const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-                const angle_corrected = angle < 0 ? 360 + angle : angle;
+                const distance = Math.round(Math.sqrt(dx ** 2 + dy ** 2));
+                const angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI));
+                const angle_corrected = Math.round(angle < 0 ? 360 + angle : angle);
                 setDistance(distance);
                 setAngleCorrected(angle_corrected);
             }
@@ -80,6 +75,31 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
             }
         };
     }, [isMouseDown, isSelected, centerX, centerY, circle_radius]);
+
+
+    // Submit Motion
+    useEffect(() => {
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter' && isSelected) {
+                // console.log('Submitting motion for circle at index:', index);
+                // console.log('Distance:', distance);
+                // console.log('Angle:', angle_corrected);
+                triggerMotion(index, distance, angle_corrected);
+                // Reset the distance and angle after submitting the motion
+                //setDistance(100);
+                //setAngleCorrected(0);
+                // Change isSelected state to false after submitting the motion
+                //onCircleClick();
+
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyPress);
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyPress);
+        };
+    }, [isSelected, triggerMotion, distance, angle_corrected, index]);
 
     return (
         <div ref={circleRef} style={circleStyle} onClick={handleCircleClick}>

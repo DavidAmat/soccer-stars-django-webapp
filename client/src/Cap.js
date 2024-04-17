@@ -95,7 +95,7 @@ const Cap = ({ capIndex, capCenter, capRadius, isSelected, onCapClick, onCapSubm
             }
         };
 
-    }, [isMouseDown, isSelected, distance, angle]);
+    }, [isMouseDown, isSelected, distance, angle, capCenter]);
 
     // ---------------------------------------------------------------
     // ---------------------------------------------------------------

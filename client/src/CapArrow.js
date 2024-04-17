@@ -17,7 +17,7 @@ const CapArrow = ({ capRadius, distance, angle }) => {
 
 
     // console.log("Arrow centerX: ", centerX, "centerY: ", centerY, "arrowLength: ", arrowLength, "angle_corrected: ", angle_corrected, "distance: ", distance)
-    console.log("Arrow capRadius: ", capRadius, "arrowLength: ", arrowLength, "angle: ", angle)
+    //console.log("Arrow capRadius: ", capRadius, "arrowLength: ", arrowLength, "angle: ", angle)
     const arrowStyle = {
         position: 'absolute',
         transformOrigin: '0% 50%',

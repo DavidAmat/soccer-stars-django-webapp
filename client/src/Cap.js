@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import CapArrow from './CapArrow';
 
-const Cap = ({ capIndex, capCenter, capRadius, isSelected, onCapClick }) => {
+const Cap = ({ capIndex, capCenter, capRadius, isSelected, onCapClick, onCapSubmit }) => {
 
     // Reference to the Cap div
     const CapRef = useRef(null); 
@@ -31,7 +31,7 @@ const Cap = ({ capIndex, capCenter, capRadius, isSelected, onCapClick }) => {
     const handleCapClick = (e) => {
         const dx = e.clientX - capCenter.x;
         const dy = -(e.clientY - capCenter.y);
-        const distanceFromCenterCap = Math.sqrt(dx ** 2 + dy ** 2);
+        const distanceFromCenterCap = Math.round(Math.sqrt(dx ** 2 + dy ** 2));
         if (distanceFromCenterCap <= capRadius) {
             onCapClick();
         }
@@ -99,6 +99,29 @@ const Cap = ({ capIndex, capCenter, capRadius, isSelected, onCapClick }) => {
 
     // ---------------------------------------------------------------
     // ---------------------------------------------------------------
+
+    // --------------------------------------------------------------- 
+    // Cap Submit Arrow power 
+    // --------------------------------------------------------------- 
+
+    useEffect(() => {
+        // Define the handler that will be triggered at each keydown
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                // handleCapSubmit = (capIndex, distance, angle)
+                onCapSubmit(capIndex, distance, angle);
+            }
+        };
+    
+        // Call the handler when a keydown is pressed at any place of the page (document)
+        if (isSelected) {
+            document.addEventListener('keydown', handleKeyDown);
+        }
+    
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isSelected, capIndex, distance, angle, onCapSubmit]);
 
     return (
         <div style={capStyle} onClick={handleCapClick}>

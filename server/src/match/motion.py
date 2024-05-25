@@ -111,9 +111,48 @@ class Motion:
         return positions, velocities, latency_ms
     
 if __name__ == "__main__":
-    X = np.array([[1, 1], [2, 2], [3, 3]])
-    R = np.array([1, 1, 1])
-    M = np.array([1, 1, 1])
-    V = np.array([[1, 1], [1, 1], [1, 1]])
-    motion = Motion(X, R, M, V)
-    X, V = motion.main()
+    from match import utils, game_entities, collision_resolver, formations
+
+    # Import classes
+    ur = utils.UtilsRender()
+    CollisionResolver = collision_resolver.CollisionResolver
+    FormationProducer = formations.FormationProducer
+
+    # Match params
+    n = 1
+    w = 1920
+    h = 1080
+    margin = 300
+    boundaries = (w, h)
+
+    # This is the standardized radii size (for the 29 cm x 17 cm field)
+    cap_radii = 1.
+    cap_mass = 1
+    ratio_radii_cap_h = cap_radii/17
+
+    # This is the radii for current field in pixels (not in cm)
+    radii = int(h * ratio_radii_cap_h)
+    goal_size = int(radii * 6)
+    goal_depth = int(radii * 2)
+    ur = utils.UtilsRender(window_size=boundaries, goal_depth=goal_depth, goal_size=goal_size)
+
+    # Match formation
+    formation_producer = FormationProducer(w, h, cap_radii=cap_radii, cap_mass=1)
+    X, R, M, team_mapping = formation_producer.setup_match_formation("formation1", "formation1")
+
+    # Move one cap
+    V = np.zeros_like(X)
+    cap_move_index = 1
+    V[cap_move_index] = [15, -1]
+
+    motion = Motion(
+        R=R,
+        M=M,
+        min_velocity=0.1,
+        boundaries=boundaries,
+        goal_size=goal_size,
+        goal_depth=goal_depth
+    )
+    Xs, Vs, latency = motion.simulate_field_motion(X=X, V=V)
+
+    ur.render_field_motion(positions=Xs, radius=R, add_delay=5)

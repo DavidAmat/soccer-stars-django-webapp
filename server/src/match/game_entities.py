@@ -1,50 +1,28 @@
 # game_entities.py
 import numpy as np
 import math
+import dataclasses
 
-class Cap:
-    def __init__(self, index, position):
-        self.radius = 20
-        self.index = index
-        self.position = np.array(position)
+# Create a dataclass with Arrow properties
+# cap_index, arrow_length, angle, min_velocity = 0.1, cap_radius = 63, max_velocity=10, max_arrow_distance=200
 
-class CapFactory:
-    def __init__(self, X: np.ndarray):
-        """
-        Args:
-            X (np.ndarray): Array of shape (n, 2) where n is the number of caps
-        Example:
-        X = np.array(
-            [[  30,  540],
-            [1280,  540]]
-        )
-        """
-        self.X = X
-        self.caps = [Cap(index=i, position=[x, y]) for i, (x, y) in enumerate(X)]
-
-    def get_x_mat(self):
-        l_x = []
-        for cap in self.caps:
-            l_x.append(cap.position)
-        return np.array(l_x)
+@dataclasses.dataclass
+class ArrowProperties:
+    cap_index: int
+    arrow_length: float
+    angle: float
+    min_velocity: float = 0.1
+    cap_radius: int = 63
+    max_velocity: int = 10
+    max_arrow_distance: int = 200
     
+   
 class Arrow:
-    def __init__(self, caps: CapFactory, cap_index, arrow_length, angle):
-        self.caps = caps
+    def __init__(self, arrow_props: ArrowProperties):
+        self.arrow_props = arrow_props
 
-        # Get the index of the cap
-        self.cap_index = cap_index
-        self.arrow_length = arrow_length
-        self.angle = angle
-
-        # Constants
-        self.min_velocity = 0.1
-        self.max_velocity = 10
-        self.max_arrow_distance = 200
-
-        # Get the cap and the angle of the arrow
-        self.cap = self.caps.caps[self.cap_index]
-        self.angle_rad = np.radians(angle)
+        # Arrow angle and direction
+        self.angle_rad = np.radians(arrow_props.angle)
         self.direction = np.array([math.cos(self.angle_rad), -math.sin(self.angle_rad)])
 
         # Get velocity in both modulus and vectorial form
@@ -56,14 +34,32 @@ class Arrow:
         """
         Get the modulus of the initial velocity of the arrow
         """
-        # Range of distances that the arrow can take in the game
-        old_min = self.cap.radius
-        old_max = self.max_arrow_distance
+        arrow_props = self.arrow_props
+        # ------------------------------------------------- #
+        #  Normalization Ratio
+        # ------------------------------------------------- #
+        # Difference betweeen arrow length and cap radius
+        diff_arrow_cap = arrow_props.arrow_length - arrow_props.cap_radius
 
+        # Maximum allowed difference for diff_arrow_cap
+        max_diff_arrow_cap = arrow_props.max_arrow_distance - arrow_props.cap_radius
+
+        # Ratio of the difference to the maximum allowed difference
+        diff_ratio = diff_arrow_cap / max_diff_arrow_cap
+        
+        # ------------------------------------------------- #
+        #  New velocity range
+        # ------------------------------------------------- #
         # Range of initial velocities that the arrow translates to (from arrow_length in px to velocity in px/t)
-        new_min = self.min_velocity
-        new_max = self.max_velocity
-        value = self.arrow_length
+        range_velocities_px_t = arrow_props.max_velocity - arrow_props.min_velocity
 
         # Linear mapping of the arrow_length to the velocity
-        return ((value - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
+        return diff_ratio  * range_velocities_px_t + arrow_props.min_velocity
+
+if __name__ == "__main__":
+    # Instantiate ArrowProperties
+    arrow_props = ArrowProperties(cap_index=0, arrow_length=70, angle=45)
+    arrow = Arrow(arrow_props)
+
+    # Get the velocity in px/t
+    print(arrow.mod_initial_velocity)

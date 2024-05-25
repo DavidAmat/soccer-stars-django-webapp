@@ -2,11 +2,13 @@ import numpy as np
 
 class FormationProducer:
     
-    def __init__(self, width, height, cap_radii=1, cap_mass=1):
+    def __init__(self, width, height, cap_radii=1, cap_mass=1, ball_radii=0.5, ball_mass=0.5):
         self.width = width
         self.height = height
         self.cap_radii = cap_radii
         self.cap_mass = cap_mass
+        self.ball_radii = ball_radii
+        self.ball_mass = ball_mass
         self.reference_width = 29
         self.reference_height = 17
 
@@ -50,17 +52,26 @@ class FormationProducer:
         
         return np.array(scaled_positions, dtype=np.float32), np.array(scaled_radii, dtype=np.float32), np.array(masses, dtype=np.float32)
     
+    def scale_ball(self):
+        ball_position = np.array([self.width / 2, self.height / 2])
+        ball_radii = self.ball_radii / self.reference_width * self.width
+        ball_mass = self.ball_mass
+        return np.array(ball_position, dtype=np.float32), np.array(ball_radii, dtype=np.float32), np.array(ball_mass, dtype=np.float32)
+    
     def setup_match_formation(self, left_formation_name, right_formation_name):
         left_positions, left_radii, left_masses = self.scale_formation(left_formation_name)
         right_positions, right_radii, right_masses = self.scale_formation(right_formation_name)
 
         # Mirror the right team's formation
         right_positions[:, 0] = self.width - right_positions[:, 0]
+
+        # Create the ball
+        ball_position, ball_radii, ball_mass = self.scale_ball()
         
         # Combine positions and radii
-        all_positions = np.vstack((left_positions, right_positions))
-        all_radii = np.hstack((left_radii, right_radii))
-        all_masses = np.hstack((left_masses, right_masses))
+        all_positions = np.vstack((left_positions, right_positions, ball_position))
+        all_radii = np.hstack((left_radii, right_radii, ball_radii))
+        all_masses = np.hstack((left_masses, right_masses, ball_mass))
         
         # Create team mapping
         #team_mapping = {i: 'left' for i in range(len(left_positions))}
@@ -68,7 +79,9 @@ class FormationProducer:
         # Create team mapping like {"left": [0, 1, 2, 3, 4], "right": [5, 6, 7, 8, 9]}
         team_mapping = {
             "left": list(range(len(left_positions))), 
-            "right": list(range(len(left_positions), len(all_positions)))}
+            "right": list(range(len(left_positions), len(left_positions) + len(right_positions))),
+            "ball": len(all_positions) - 1
+        }
         
         return all_positions, all_radii, all_masses, team_mapping
 

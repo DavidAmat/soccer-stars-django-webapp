@@ -141,18 +141,7 @@ if __name__ == "__main__":
     formation_producer = FormationProducer(w, h, cap_radii=cap_radii, cap_mass=1)
     X, R, M, team_mapping = formation_producer.setup_match_formation("formation1", "formation1")
 
-    # Submit an Arrow with min length 63 and max length 200
-    select_cap = 0
-    arrow_power = 180
-    angle = 55
-    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
-    arrow = Arrow(arrow_props)
-    
-    # Move one cap
-    V = np.zeros_like(X)
-    V[select_cap] = arrow.initial_velocity
-    print(V)
-
+    # Create a Motion object
     motion = Motion(
         R=R,
         M=M,
@@ -161,6 +150,149 @@ if __name__ == "__main__":
         goal_size=goal_size,
         goal_depth=goal_depth
     )
-    Xs, Vs, latency = motion.simulate_field_motion(X=X, V=V)
 
-    ur.render_field_motion(positions=Xs, radius=R, add_delay=5)
+    # ------------------------------------------------- #
+    # History
+    # ------------------------------------------------- #
+    Xhist = []
+
+
+    # ------------------------------------------------- #
+    # Movement 1
+    # ------------------------------------------------- #
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 4
+    arrow_power = 190
+    angle = 15
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
+    # Move one cap
+    V = np.zeros_like(X)
+    V[select_cap] = arrow.initial_velocity
+    print(V)
+
+    # Simulate motion
+    Xs, Vs, latency = motion.simulate_field_motion(X=X, V=V)
+    Xhist.extend(Xs)
+
+    # ------------------------------------------------- #
+    # Movement 2
+    # ------------------------------------------------- #
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 5
+    arrow_power = 190
+    angle = 15
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
+    # Move one cap
+    V = np.zeros_like(X)
+    V[select_cap] = arrow.initial_velocity
+    print(V)
+
+    # Simulate motion
+    Xs2, Vs2, latency2 = motion.simulate_field_motion(X=Xs[-1], V=V)
+    Xhist.extend(Xs2)
+
+    # ------------------------------------------------- #
+    # Movement 3
+    # ------------------------------------------------- #
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 4
+    arrow_power = 190
+    angle = 190
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
+    # Move one cap
+    V = np.zeros_like(X)
+    V[select_cap] = arrow.initial_velocity
+    print(V)
+
+    # Simulate motion
+    Xs3, Vs3, latency3 = motion.simulate_field_motion(X=Xs2[-1], V=V)
+    Xhist.extend(Xs3)
+
+    # ------------------------------------------------- #
+    # Movement 4
+    # ------------------------------------------------- #
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 1
+    arrow_power = 190
+    angle = 185
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
+    # Move one cap
+    V = np.zeros_like(X)
+    V[select_cap] = arrow.initial_velocity
+    print(V)
+
+    # Simulate motion
+    Xs4, Vs4, latency4 = motion.simulate_field_motion(X=Xs3[-1], V=V)
+    Xhist.extend(Xs4)
+
+    # ------------------------------------------------- #
+    # Movement 5
+    # ------------------------------------------------- #
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 4
+    arrow_power = 190
+    angle = 180
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
+    # Move one cap
+    V = np.zeros_like(X)
+    V[select_cap] = arrow.initial_velocity
+    print(V)
+
+    # Simulate motion
+    Xs5, Vs5, latency5 = motion.simulate_field_motion(X=Xs4[-1], V=V)
+    Xhist.extend(Xs5)
+
+    # ------------------------------------------------- #
+    # Movement 6
+    # ------------------------------------------------- #
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 2
+    arrow_power = 100
+    angle = 230
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
+    # Move one cap
+    V = np.zeros_like(X)
+    V[select_cap] = arrow.initial_velocity
+    print(V)
+
+    # Simulate motion
+    Xs6, Vs6, latency6 = motion.simulate_field_motion(X=Xs5[-1], V=V)
+    Xhist.extend(Xs6)
+
+    # ------------------------------------------------- #
+    # Movement 7
+    # ------------------------------------------------- #
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 0
+    arrow_power = 170
+    angle = 190
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
+    # Move one cap
+    V = np.zeros_like(X)
+    V[select_cap] = arrow.initial_velocity
+    print(V)
+
+    # Simulate motion
+    Xs7, Vs7, latency7 = motion.simulate_field_motion(X=Xs6[-1], V=V)
+    Xhist.extend(Xs7)
+
+    # ------------------------------------------------- #
+    # See motion in all movements
+    # ------------------------------------------------- #
+    # Render the motion
+    ur.render_field_motion(positions=Xhist, radius=R, add_delay=5)
+

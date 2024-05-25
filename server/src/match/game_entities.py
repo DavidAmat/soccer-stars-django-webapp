@@ -27,7 +27,7 @@ class Arrow:
 
         # Get velocity in both modulus and vectorial form
         self.mod_initial_velocity = self.map_arrow_length_to_mod_initial_velocity()
-        self.initial_velocity = self.mod_initial_velocity * self.direction
+        self.initial_velocity = np.array(self.mod_initial_velocity * self.direction)
         
 
     def map_arrow_length_to_mod_initial_velocity(self):
@@ -63,3 +63,4 @@ if __name__ == "__main__":
 
     # Get the velocity in px/t
     print(arrow.mod_initial_velocity)
+    print(arrow.initial_velocity)

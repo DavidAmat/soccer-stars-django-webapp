@@ -117,6 +117,7 @@ if __name__ == "__main__":
     ur = utils.UtilsRender()
     CollisionResolver = collision_resolver.CollisionResolver
     FormationProducer = formations.FormationProducer
+    from game_entities import Arrow, ArrowProperties
 
     # Match params
     n = 1
@@ -140,10 +141,17 @@ if __name__ == "__main__":
     formation_producer = FormationProducer(w, h, cap_radii=cap_radii, cap_mass=1)
     X, R, M, team_mapping = formation_producer.setup_match_formation("formation1", "formation1")
 
+    # Submit an Arrow with min length 63 and max length 200
+    select_cap = 0
+    arrow_power = 180
+    angle = 55
+    arrow_props = ArrowProperties(cap_index=select_cap, arrow_length=arrow_power, angle=angle)
+    arrow = Arrow(arrow_props)
+    
     # Move one cap
     V = np.zeros_like(X)
-    cap_move_index = 1
-    V[cap_move_index] = [15, -1]
+    V[select_cap] = arrow.initial_velocity
+    print(V)
 
     motion = Motion(
         R=R,

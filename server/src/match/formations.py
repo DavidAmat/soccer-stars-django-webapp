@@ -2,16 +2,15 @@ import numpy as np
 
 class FormationProducer:
     
-    
-    
-    def __init__(self, width, height, cap_radii=1):
+    def __init__(self, width, height, cap_radii=1, cap_mass=1):
         self.width = width
         self.height = height
         self.cap_radii = cap_radii
+        self.cap_mass = cap_mass
         self.reference_width = 29
         self.reference_height = 17
 
-    def get_formations(self, formation_name, radii=1, n=5):
+    def get_formations(self, formation_name, cap_radii=1, cap_mass=1, n=5):
         if n == 5:
             formations_5 = {
                 "formation1": {
@@ -21,7 +20,8 @@ class FormationProducer:
                         (7.8, 8.5),  # midfielder
                         (11, 8.5)  # striker
                     ],
-                    "radii": [radii] * n
+                    "radii": [cap_radii] * n,
+                    "masses": [cap_mass] * n
                 },
                 "formation2": {
                     "positions": [
@@ -29,18 +29,17 @@ class FormationProducer:
                         (6, 8.5),  # midfielder
                         (11, 3), (11, 14)  # strikers
                     ],
-                    "radii": [radii] * n
+                    "radii": [cap_radii] * n,
+                    "masses": [cap_mass] * n
                 }
             }
             return formations_5.get(formation_name, {})
         
     def scale_formation(self, formation_name):
-        if formation_name not in self.formations:
-            raise ValueError(f"Formation {formation_name} not found.")
-        
-        formation = self.formations[formation_name]
+        formation = self.get_formations(formation_name, cap_radii=self.cap_radii, cap_mass=self.cap_mass)
         positions = formation["positions"]
         radii = formation["radii"]
+        masses = formation["masses"]
         
         scaled_positions = [
             (x / self.reference_width * self.width, y / self.reference_height * self.height)
@@ -49,11 +48,11 @@ class FormationProducer:
         
         scaled_radii = [r / self.reference_width * self.width for r in radii]
         
-        return np.array(scaled_positions, dtype=np.float32), np.array(scaled_radii, dtype=np.float32)
+        return np.array(scaled_positions, dtype=np.float32), np.array(scaled_radii, dtype=np.float32), np.array(masses, dtype=np.float32)
     
     def setup_match_formation(self, left_formation_name, right_formation_name):
-        left_positions, left_radii = self.scale_formation(left_formation_name)
-        right_positions, right_radii = self.scale_formation(right_formation_name)
+        left_positions, left_radii, left_masses = self.scale_formation(left_formation_name)
+        right_positions, right_radii, right_masses = self.scale_formation(right_formation_name)
 
         # Mirror the right team's formation
         right_positions[:, 0] = self.width - right_positions[:, 0]
@@ -61,6 +60,7 @@ class FormationProducer:
         # Combine positions and radii
         all_positions = np.vstack((left_positions, right_positions))
         all_radii = np.hstack((left_radii, right_radii))
+        all_masses = np.hstack((left_masses, right_masses))
         
         # Create team mapping
         #team_mapping = {i: 'left' for i in range(len(left_positions))}
@@ -70,7 +70,7 @@ class FormationProducer:
             "left": list(range(len(left_positions))), 
             "right": list(range(len(left_positions), len(all_positions)))}
         
-        return all_positions, all_radii, team_mapping
+        return all_positions, all_radii, all_masses, team_mapping
 
 # Example usage and testing
 if __name__ == "__main__":
@@ -84,11 +84,11 @@ if __name__ == "__main__":
     
     # Single formation
     scaler = FormationProducer(width, height)
-    X, R = scaler.scale_formation(formation_name)
+    X, R, M = scaler.scale_formation(formation_name)
     
     # Match formation
     scaler = FormationProducer(width, height)
-    X, R, team_mapping = scaler.setup_match_formation(left_formation_name, right_formation_name)
+    X, R, M, team_mapping = scaler.setup_match_formation(left_formation_name, right_formation_name)
 
     # Get the coordinates of a team
     X_team = X[team_mapping["right"]]

@@ -1,42 +1,48 @@
-# match/consumers.py
 import json
-
 from channels.generic.websocket import AsyncWebsocketConsumer
+from server.src.match_logic.main_match import Match
+import numpy as np
 
 
 class MatchConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_match = self.scope["url_route"]["kwargs"]["room_match"]
-        self.room_group_name = f"match_{self.room_match}"
-
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name, self.channel_name
-        )
-
+        self.match = Match()
         await self.accept()
 
     async def disconnect(self, close_code):
-        # Leave room group
-        await self.channel_layer.group_discard(
-            self.room_group_name, self.channel_name
-        )
+        pass
 
-    # Receive message from WebSocket
     async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        radius = text_data_json["capRadius"]
+        data = json.loads(text_data)
+        action = data.get('action')
 
-        # Send message to room group
-        await self.channel_layer.group_send(
-            self.room_group_name, {"type": "match.message", "capRadius": radius}
-        )
-    
-    # method that should be invoked on consumers that receive the event from the room group
-    async def match_message(self, event):
-        radius_new = event["capRadius"] + 50
+        if action == 'create_formation':
+            await self.create_formation(data)
+        elif action == 'submit_arrow':
+            await self.submit_arrow(data)
 
-        # Send message to WebSocket
-        # The self.send method in the match_message function sends the message back to the 
-        # WebSocket client that is connected to this instance of the consumer.
-        await self.send(text_data=json.dumps({"capRadius": radius_new}))
+    async def create_formation(self, data):
+        left_formation = data['left_formation']
+        right_formation = data['right_formation']
+
+        # Initial setup
+        X_initial = self.match.initial_setup(left_formation, right_formation)
+
+        response = {
+            'initial_positions': X_initial.tolist(),
+        }
+        await self.send(text_data=json.dumps(response))
+
+    async def submit_arrow(self, data):
+        cap_idx = int(data['cap_idx'])
+        arrow_power = int(data['arrow_power'])
+        angle = int(data['angle'])
+        X_last = np.array(data['positions'])
+
+        # Move cap
+        X_hist = self.match.move_cap(cap_idx, arrow_power, angle, X_last)
+
+        response = {
+            'positions': [x.tolist() for x in X_hist]
+        }
+        await self.send(text_data=json.dumps(response))

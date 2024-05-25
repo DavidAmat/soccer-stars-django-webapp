@@ -1,5 +1,5 @@
 import numpy as np
-from match.collision_resolver import CollisionResolver
+from match_logic.collision_resolver import CollisionResolver
 import time
 
 
@@ -78,7 +78,7 @@ class Motion:
             X = X_next
             V = V_next
             if self.is_system_not_moving(V_next):
-                print(f"System stopped at iteration {iteration}")
+                # print(f"System stopped at iteration {iteration}")
                 break
             iteration += 1
         end_time = time.time()
@@ -102,7 +102,7 @@ class Motion:
             X = X_next
             V = V_next
             if self.is_system_not_moving(V_next):
-                print(f"System stopped at iteration {iteration}")
+                # print(f"System stopped at iteration {iteration}")
                 break
             iteration += 1
         end_time = time.time()
@@ -111,7 +111,7 @@ class Motion:
         return positions, velocities, latency_ms
     
 if __name__ == "__main__":
-    from match import utils, game_entities, collision_resolver, formations
+    from match_logic import utils, game_entities, collision_resolver, formations
 
     # Import classes
     ur = utils.UtilsRender()
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     n = 1
     w = 1920
     h = 1080
-    margin = 300
+    margin = 10
     boundaries = (w, h)
 
     # This is the standardized radii size (for the 29 cm x 17 cm field)

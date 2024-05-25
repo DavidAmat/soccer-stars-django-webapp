@@ -1,22 +1,26 @@
-# backend_service/asgi.py
-import os
+"""
+ASGI config for backend project.
 
+It exposes the ASGI callable as a module-level variable named ``application``.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
+"""
+
+import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from django.urls import re_path
-
-from match import consumers
+from match.routing import websocket_urlpatterns
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
 application = ProtocolTypeRouter({
-    "http": get_asgi_application(),
-    "websocket": AuthMiddlewareStack(
+    'http': get_asgi_application(),
+    'websocket': AuthMiddlewareStack(
         URLRouter(
-            [
-                re_path(r"ws/match/(?P<room_match>\w+)/$", consumers.MatchConsumer.as_asgi()),
-            ]
+            websocket_urlpatterns
         )
     ),
 })
+

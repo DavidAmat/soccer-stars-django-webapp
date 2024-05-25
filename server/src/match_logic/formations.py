@@ -87,7 +87,7 @@ class FormationProducer:
 
 # Example usage and testing
 if __name__ == "__main__":
-    from match import utils
+    from match_logic import utils
 
     width = 1920  # new field width
     height = 1080  # new field height

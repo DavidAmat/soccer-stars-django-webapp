@@ -1,5 +1,5 @@
 import numpy as np
-from match_logic import game_entities, formations, motion
+from match.match_logic import game_entities, formations, motion
 
 class Match:
     def __init__(self, width=1920, height=1080, cap_radii=1.0, cap_mass=1.0, goal_size=None, goal_depth=None, ball_mass=0.5, ball_radii=0.5):

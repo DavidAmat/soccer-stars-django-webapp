@@ -1,5 +1,5 @@
 import numpy as np
-from match_logic.collision_resolver import CollisionResolver
+from match.match_logic.collision_resolver import CollisionResolver
 import time
 
 

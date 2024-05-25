@@ -1,12 +1,15 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-from server.src.match_logic.main_match import Match
+from match.match_logic.main_match import Match
 import numpy as np
+
+
+match = Match()
 
 
 class MatchConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.match = Match()
+        print("Here: Established connection")
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -22,11 +25,12 @@ class MatchConsumer(AsyncWebsocketConsumer):
             await self.submit_arrow(data)
 
     async def create_formation(self, data):
+        print("Here: Creating formation")
         left_formation = data['left_formation']
         right_formation = data['right_formation']
 
         # Initial setup
-        X_initial = self.match.initial_setup(left_formation, right_formation)
+        X_initial = match.initial_setup(left_formation, right_formation)
 
         response = {
             'initial_positions': X_initial.tolist(),
@@ -34,13 +38,14 @@ class MatchConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(response))
 
     async def submit_arrow(self, data):
+        print("Here: Submitting arrow")
         cap_idx = int(data['cap_idx'])
         arrow_power = int(data['arrow_power'])
         angle = int(data['angle'])
         X_last = np.array(data['positions'])
 
         # Move cap
-        X_hist = self.match.move_cap(cap_idx, arrow_power, angle, X_last)
+        X_hist = match.move_cap(cap_idx, arrow_power, angle, X_last)
 
         response = {
             'positions': [x.tolist() for x in X_hist]

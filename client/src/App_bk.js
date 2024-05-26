@@ -1,88 +1,138 @@
-import React, { useState } from 'react';
+// src/App.js
+import React, { useState, useEffect, useCallback } from 'react';
+import Circle from './Circle';
+import useMotionCircle from './hooks/useMotionCircle';
+import './global.css'; // Import the global styles
+
+const WEBSOCKET_URL = "ws://localhost:8000/ws/match/";
 
 const App = () => {
-    const [position] = useState({ x: 250, y: 250 }); // Circle's center
-    // circle radius
-    const [circle_radius] = useState(25);
-    const [isSelected, setIsSelected] = useState(false);
-    const [isMouseDown, setIsMouseDown] = useState(false);
-    const [arrowStyle, setArrowStyle] = useState({ display: 'none' }); // Initially hide the arrow
-    const [maxLengthArrow, setMaxLengthArrow] = useState(100);
+    const [selectedCircle, setSelectedCircle] = useState(null);
+    const [configs, setConfigs] = useState([
+        { initialPosition: { x: 250, y: 550 }, circle_radius: 50 },
+        { initialPosition: { x: 350, y: 850 }, circle_radius: 50 },
+        { initialPosition: { x: 550, y: 850 }, circle_radius: 50 },
+        // Add more circle configs here
+    ]);
+    const [newConfigs, setNewConfigs] = useState(null); // Define newConfigs as a state variable
 
-    const handleCircleClick = (e) => {
-        const dx = e.clientX - (position.x);
-        const dy = (position.y) - e.clientY;
-        console.log("dx: ", dx, "dy: ", dy)
-        const distanceFromCenter = Math.min(Math.sqrt(dx ** 2 + dy ** 2), maxLengthArrow);
-        if (distanceFromCenter <= circle_radius) { // Assuming the circle's radius is 25
-            setIsSelected(!isSelected);
-            if (!isSelected) {
-                // Reset arrow style to default when circle is selected
-                setDefaultArrow();
-            } else {
-                // Hide arrow when circle is deselected
-                setArrowStyle({ display: 'none' });
+    const fetchInitialPositions = useCallback(() => {
+        const ws = new WebSocket(WEBSOCKET_URL);
+
+        ws.onopen = () => {
+            const formationPayload = {
+                action: "create_formation",
+                left_formation: "formation1",
+                right_formation: "formation2"
+            };
+            console.log("Sending to WebSocket:", formationPayload);
+            ws.send(JSON.stringify(formationPayload));
+        };
+
+        ws.onmessage = (event) => {
+            const response = JSON.parse(event.data);
+            console.log("Received from WebSocket:", response);
+            console.log("Initial configs:", configs);
+            if (response.initial_positions) {
+                const newConfigsData = response.initial_positions.map(position => ({
+                    initialPosition: { x: position[0], y: position[1] },
+                    circle_radius: 50
+                }));
+                setNewConfigs(newConfigsData); // Update newConfigs instead of configs
             }
+            ws.close();
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
+    }, []);
+
+    useEffect(() => {
+        fetchInitialPositions();
+    }, [fetchInitialPositions]);
+
+    const calculateNewPosition = (initialPosition, distance, angle) => {
+        const angleInRadians = angle * (Math.PI / 180);
+        const x = Math.round(initialPosition.x + distance * Math.cos(angleInRadians));
+        const y = Math.round(initialPosition.y - distance * Math.sin(angleInRadians));
+        return { x, y };
+    };
+
+    const calculateMotion = (circleIndex, distance, angle_corrected) => {
+        const currentConfigs = newConfigs || configs; // Use newConfigs if available, else fall back to configs
+        const motion = {};
+        let currentDistance = distance;
+        let timestep = 1;
+
+        while (currentDistance >= 1) {
+            const newPosition = calculateNewPosition(currentConfigs[circleIndex].initialPosition, currentDistance, angle_corrected);
+            if (!motion[timestep]) {
+                motion[timestep] = [];
+            }
+            motion[timestep].push({ index: circleIndex, newPosition });
+            console.log('calculateMotion: [timestep]:', timestep, '[circleIndex]:', circleIndex, '[newPosition]:', newPosition);
+
+            currentDistance /= 2;
+            timestep += 1;
         }
+
+        return motion;
     };
 
-    const handleMouseMove = (e) => {
-        if (isMouseDown && isSelected) {
-            const dx = e.clientX - position.x;
-            const dy = position.y - e.clientY;
-            const distance = Math.min(
-                Math.max(
-                    Math.sqrt(dx ** 2 + dy ** 2),
-                    circle_radius
-                ),
-                maxLengthArrow
-            );
-            const angle = Math.atan2(dy, dx) * (180 / Math.PI);
-            const angle_corrected = angle < 0 ? 360 + angle : angle;
-            console.log("Angle: ", angle, "Angle_corrected: ", angle_corrected)
-            setArrow(position.x, position.y, distance, angle_corrected);
-        }
+    const handleMotionTrigger = (index, distance, angle_corrected) => {
+        const ws = new WebSocket(WEBSOCKET_URL);
+
+        ws.onopen = () => {
+            const arrowPayload = {
+                action: "submit_arrow",
+                cap_idx: index,
+                arrow_power: distance,
+                angle: angle_corrected,
+                positions: (newConfigs || configs).map(config => [config.initialPosition.x, config.initialPosition.y])
+            };
+            ws.send(JSON.stringify(arrowPayload));
+        };
+
+        ws.onmessage = (event) => {
+            const response = JSON.parse(event.data);
+            if (response.positions) {
+                const newPositions = response.positions.map(position => ({
+                    initialPosition: { x: position[0], y: position[1] },
+                    circle_radius: 50
+                }));
+                setNewConfigs(newPositions); // Update newConfigs with the new positions
+            }
+            ws.close();
+        };
+
+        ws.onerror = (error) => {
+            console.error("WebSocket error:", error);
+        };
     };
 
-    const setDefaultArrow = () => {
-        setArrow(position.x, position.y, 100, 0); // Default distance and angle
+    const positions = useMotionCircle(newConfigs || configs, calculateMotion, 0.5); // Use newConfigs if available, else fall back to configs
+
+    const handleCircleClick = (index) => {
+        setSelectedCircle(selectedCircle === index? null : index);
     };
-
-    const setArrow = (centerX, centerY, distance, angle_corrected) => {
-        // Calculate the y-axis adjustment based on half of the arrow's height to center it vertically
-
-        setArrowStyle({
-            position: 'absolute',
-            transformOrigin: '0% 50%',
-            transform: `translate(${centerX}px, ${centerY - distance / 2}px) rotate(${-angle_corrected}deg)`,
-            width: `${distance}px`,
-            height: `${distance}px`,
-            pointerEvents: 'none',
-            display: 'block',
-            backgroundImage: 'url("/icons/arrow.svg")',
-            backgroundSize: 'contain',
-            backgroundRepeat: 'no-repeat',
-        });
-    };
-
-    // Listen to document-level events for mouse down and up
-    document.onmousedown = () => setIsMouseDown(true);
-    document.onmouseup = () => setIsMouseDown(false);
-    document.onclick = handleCircleClick;
-    document.onmousemove = handleMouseMove;
 
     return (
-        <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
-            <div style={{
-                width: '50px',
-                height: '50px',
-                borderRadius: '50%',
-                backgroundColor: isSelected ? 'red' : 'black',
-                position: 'absolute',
-                left: `${position.x - 25}px`,
-                top: `${position.y - 25}px`,
-            }} />
-            <div style={arrowStyle} />
+        <div id="root">
+            <div className="background"></div>
+            <div className="game-container">
+                {positions.map((position, index) => (
+                    <Circle
+                        key={index}
+                        index={index}
+                        initialPosition={position}
+                        circle_radius={(newConfigs || configs)[index].circle_radius}
+                        isSelected={selectedCircle === index}
+                        onCircleClick={() => handleCircleClick(index)}
+                        triggerMotion={handleMotionTrigger}
+                    />
+                ))}
+            </div>
         </div>
     );
 };

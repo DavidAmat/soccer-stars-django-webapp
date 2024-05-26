@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 const useMotionCircle = (configs, motionData, timestep) => {
     const [positions, setPositions] = useState(configs.map(config => config.initialPosition));
     const [counter, setCounter] = useState(1);
+    console.log("useMotionCircle - positions", positions);
 
     useEffect(() => {
         const interval = setInterval(() => {

@@ -8,6 +8,8 @@ const App = () => {
     const [circleConfigs, setCircleConfigs] = useState([]);
     const [selectedCircle, setSelectedCircle] = useState(null);
     const positionsRef = useRef([]);
+    const [isMotionInProgress, setIsMotionInProgress] = useState(false);
+
 
     const LEFT_MARGIN = 207;
     const TOP_MARGIN = 183;
@@ -53,7 +55,9 @@ const App = () => {
     };
 
     const handleCircleClick = (index) => {
-        setSelectedCircle(selectedCircle === index ? null : index);
+        if (!isMotionInProgress) {
+            setSelectedCircle(selectedCircle === index ? null : index);
+        }
     };
 
     const triggerMotion = (index, distance, angle_corrected) => {
@@ -69,6 +73,7 @@ const App = () => {
             };
             console.log("Sending to WebSocket:", arrowPayload);
             ws.send(JSON.stringify(arrowPayload));
+            setIsMotionInProgress(true); // Add this line before sending the WebSocket message
         };
 
         ws.onmessage = (event) => {
@@ -99,6 +104,8 @@ const App = () => {
                 timestep += 1;
             } else {
                 clearInterval(interval);
+                setIsMotionInProgress(false); // Allow user to interact again
+
                 // Remember the last positions
                 positionsRef.current = positions[positions.length - 1];
             }

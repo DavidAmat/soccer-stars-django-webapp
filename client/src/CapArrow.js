@@ -1,4 +1,4 @@
-// src/Arrow.js
+// src/CapArrow.js
 import React from 'react';
 
 const CapArrow = ({ capRadius, distance, angle }) => {

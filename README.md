@@ -77,7 +77,7 @@ string = msgpack.unpackb(data)
 
 ```
 # In the folder server/backend run
-daphne backend.asgi:application
+daphne -p 8000 backend.asgi:application
 
 # This runs the server and then you can test the websocket with the notebook server/notebooks/websocket/debug_websocket.ipynb
 ```

@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import Circle from './Circle';
 import useMotionCircle from './hooks/useMotionCircle';
+import './global.css'; // Import the global styles
+
 
 const App = () => {
     const [selectedCircle, setSelectedCircle] = useState(null);
     const configs = [
-        { initialPosition: { x: 250, y: 250 }, circle_radius: 50 },
+        { initialPosition: { x: 250, y: 550 }, circle_radius: 50 },
         { initialPosition: { x: 350, y: 850 }, circle_radius: 50 },
         // Add more circle configs here
     ];
@@ -67,18 +69,21 @@ const App = () => {
     };
 
     return (
-        <div>
-            {positions.map((position, index) => (
-                <Circle
-                    key={index}
-                    index={index} // Pass the index prop here
-                    initialPosition={position}
-                    circle_radius={configs[index].circle_radius}
-                    isSelected={selectedCircle === index}
-                    onCircleClick={() => handleCircleClick(index)}
-                    triggerMotion={handleMotionTrigger} // Pass calculateMotion here
-                />
-            ))}
+        <div id="root">
+            <div className="background"></div>
+            <div className="game-container">
+                {positions.map((position, index) => (
+                    <Circle
+                        key={index}
+                        index={index} // Pass the index prop here
+                        initialPosition={position}
+                        circle_radius={configs[index].circle_radius}
+                        isSelected={selectedCircle === index}
+                        onCircleClick={() => handleCircleClick(index)}
+                        triggerMotion={handleMotionTrigger} // Pass calculateMotion here
+                    />
+                ))}
+            </div>
         </div>
     );
 };

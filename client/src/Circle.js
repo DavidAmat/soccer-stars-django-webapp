@@ -8,18 +8,18 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
     const [angle_corrected, setAngleCorrected] = useState(0); // Default angle
     const circleRef = useRef(null); // Reference to the circle div
 
-    // Adjust the initialPosition to be the top-left corner of the circle
     const circleStyle = {
         width: `${circle_radius * 2}px`,
         height: `${circle_radius * 2}px`,
-        borderRadius: '50%',
-        backgroundColor: isSelected ? 'red' : 'black',
         position: 'absolute',
         left: `${initialPosition.x - circle_radius}px`,
         top: `${initialPosition.y - circle_radius}px`,
+        backgroundImage: 'url("/icons/cap_f1.svg")',
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        cursor: 'pointer'
     };
 
-    // Adjust the centerX and centerY to be the center of the circle
     const centerX = initialPosition.x;
     const centerY = initialPosition.y;
 
@@ -32,17 +32,13 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
         }
     };
 
-    // Reset isMouseDown state when isSelected state changes
     useEffect(() => {
         if (isSelected) {
             setIsMouseDown(false);
         }
     }, [isSelected]);
 
-    
-
     useEffect(() => {
-        // Listen to document-level events for mouse up and move
         document.onmouseup = () => setIsMouseDown(false);
 
         const handleMouseMove = (e) => {
@@ -57,16 +53,13 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
             }
         };
 
-
         document.onmousemove = handleMouseMove;
 
-        // Listen to circle-level event for mouse down
-        const currentCircleRef = circleRef.current; // Copy 'circleRef.current' to a variable
+        const currentCircleRef = circleRef.current;
         if (currentCircleRef) {
             currentCircleRef.onmousedown = () => setIsMouseDown(true);
         }
 
-        // Clean up the event listeners when the component unmounts
         return () => {
             document.onmouseup = null;
             document.onmousemove = null;
@@ -76,21 +69,10 @@ const Circle = ({ initialPosition, circle_radius, isSelected, onCircleClick, ind
         };
     }, [isMouseDown, isSelected, centerX, centerY, circle_radius]);
 
-
-    // Submit Motion
     useEffect(() => {
         const handleKeyPress = (e) => {
             if (e.key === 'Enter' && isSelected) {
-                // console.log('Submitting motion for circle at index:', index);
-                // console.log('Distance:', distance);
-                // console.log('Angle:', angle_corrected);
                 triggerMotion(index, distance, angle_corrected);
-                // Reset the distance and angle after submitting the motion
-                //setDistance(100);
-                //setAngleCorrected(0);
-                // Change isSelected state to false after submitting the motion
-                //onCircleClick();
-
             }
         };
 

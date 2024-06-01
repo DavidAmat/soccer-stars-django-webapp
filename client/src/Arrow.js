@@ -1,13 +1,13 @@
 // src/Arrow.js
 import React from 'react';
 
-const Arrow = ({ circle_radius, centerX, centerY, distance, angle_corrected }) => {
+const Arrow = ({ cap_radius, centerX, centerY, distance, angle_corrected }) => {
     // Correct arrowLength
     const maxarrowLength = 200;
     const arrowLength = Math.min(
         Math.max(
             distance,
-            circle_radius
+            cap_radius
         ),
         maxarrowLength // Maximum length of the arrow
     );
@@ -17,7 +17,7 @@ const Arrow = ({ circle_radius, centerX, centerY, distance, angle_corrected }) =
     const arrowStyle = {
         position: 'absolute',
         transformOrigin: '0% 50%',
-        transform: `translate(${circle_radius}px, ${circle_radius - arrowLength/2}px) rotate(${-angle_corrected}deg)`,
+        transform: `translate(${cap_radius}px, ${cap_radius - arrowLength/2}px) rotate(${-angle_corrected}deg)`,
         width: `${arrowLength}px`,
         height: `${arrowLength}px`, // Assuming a fixed height for the arrow SVG
         pointerEvents: 'none',

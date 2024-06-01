@@ -162,6 +162,20 @@ class CollisionResolver:
             for idx, coord_idx, new_vel in l_velocity_second_coll:
                 Vf[idx, coord_idx] = new_vel
 
+        # ************************ #
+        #   Net velocity reduction
+        # ************************ #
+        # When any cap collides with the net, reduce it's velocity by 50%
+        # if the ball is the one hitting the net (goal), reduce the velocity by 90%
+        for cap_idx, edge_idx in field_idx_collisions:
+            # Net collisions
+            if edge_idx in [0,1,2,5,6,7]:
+                # Check if the cap is the ball (last index of Vf rows)
+                if cap_idx == Vf.shape[0] - 1:
+                    Vf[cap_idx] *= 0.1
+                else:
+                    Vf[cap_idx] *= 0.5
+
         return Vf
 
 

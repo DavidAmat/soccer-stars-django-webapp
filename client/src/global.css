@@ -19,7 +19,9 @@ body, html {
 }
 
 .background {
-    position: relative;
+    position: absolute; /* Ensure the background is always in the same place */
+    top: 0;
+    left: 0;
     width: 1920px;
     height: 1080px;
     background: url('/icons/football_field.svg') no-repeat center center;
@@ -28,21 +30,20 @@ body, html {
 }
 
 .game-container {
-    position: absolute;
+    position: absolute; /* Make sure the game container is also absolute */
     top: 0;
     left: 0;
     width: 1920px;
     height: 1080px;
+    z-index: 0; /* Ensure the game container is above the background */
 }
 
 .button-container {
-    margin-top: 20px; /* Space between the background and the button */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
+    position: absolute; /* Absolute positioning within #root */
+    top: 1100px; /* Place it right below the background */
+    left: 875px; /* Set the X position */
+    z-index: 2; /* Ensure the button container is above the background */
 }
-
 .start-button {
     padding: 15px 30px;
     border: none;

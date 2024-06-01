@@ -1,24 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Circle from './Circle';
+import Cap from './Cap';
 import './global.css'; // Import the global styles
 
 const WEBSOCKET_URL = "ws://localhost:8000/ws/match/";
 
 const App = () => {
-    const [circleConfigs, setCircleConfigs] = useState([]);
-    const [selectedCircle, setSelectedCircle] = useState(null);
+    const [capConfigs, setCapConfigs] = useState([]);
+    const [selectedCap, setSelectedCap] = useState(null);
     const positionsRef = useRef([]);
     const [isMotionInProgress, setIsMotionInProgress] = useState(false);
 
 
     const LEFT_MARGIN = 207;
+    const HORIZONTAL_MARGIN = 412;
     const TOP_MARGIN = 183;
-    const DOWNSCALE_FACTOR = 0.793;
+    const DOWNSCALE_FACTOR_X = (1920 - HORIZONTAL_MARGIN) / 1920;
+    const DOWNSCALE_FACTOR_Y = (1080 - TOP_MARGIN) / 1080;
 
     const scalePosition = (pos) => {
         return {
-            x: pos[0] * DOWNSCALE_FACTOR + LEFT_MARGIN,
-            y: pos[1] * DOWNSCALE_FACTOR + TOP_MARGIN
+            x: pos[0] * DOWNSCALE_FACTOR_X + LEFT_MARGIN,
+            y: pos[1] * DOWNSCALE_FACTOR_Y + TOP_MARGIN
         };
     };
 
@@ -43,7 +45,7 @@ const App = () => {
                     pos: scalePosition(pos),
                     radius: index === response.initial_positions.length - 1 ? 25 : 50
                 }));
-                setCircleConfigs(configs);
+                setCapConfigs(configs);
                 positionsRef.current = response.initial_positions;
             }
             ws.close();
@@ -54,9 +56,9 @@ const App = () => {
         };
     };
 
-    const handleCircleClick = (index) => {
+    const handleCapClick = (index) => {
         if (!isMotionInProgress) {
-            setSelectedCircle(selectedCircle === index ? null : index);
+            setSelectedCap(selectedCap === index ? null : index);
         }
     };
 
@@ -79,7 +81,7 @@ const App = () => {
         ws.onmessage = (event) => {
             const response = JSON.parse(event.data);
             if (response.positions) {
-                setSelectedCircle(null); // De-select the cap
+                setSelectedCap(null); // De-select the cap
                 const positions = response.positions;
                 updatePositionsOverTime(positions);
             }
@@ -100,7 +102,7 @@ const App = () => {
                     pos: scalePosition(pos),
                     radius: index === positions[timestep].length - 1 ? 25 : 50
                 }));
-                setCircleConfigs(configs);
+                setCapConfigs(configs);
                 timestep += 1;
             } else {
                 clearInterval(interval);
@@ -121,14 +123,14 @@ const App = () => {
                 </button>
             </div>
             <div className="game-container">
-                {circleConfigs.map((config, index) => (
-                    <Circle
+                {capConfigs.map((config, index) => (
+                    <Cap
                         key={index}
                         index={index}
                         initialPosition={config.pos}
-                        circle_radius={config.radius}
-                        isSelected={selectedCircle === index}
-                        onCircleClick={() => handleCircleClick(index)}
+                        cap_radius={config.radius}
+                        isSelected={selectedCap === index}
+                        onCapClick={() => handleCapClick(index)}
                         triggerMotion={triggerMotion}
                     />
                 ))}

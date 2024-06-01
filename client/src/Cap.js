@@ -1,134 +1,93 @@
-import React, { useRef, useEffect, useState } from 'react';
-import CapArrow from './CapArrow';
+// src/Cap.js
+import React, { useState, useEffect, useRef } from 'react';
+import Arrow from './Arrow';
 
-const Cap = ({ capIndex, capCenter, capRadius, isSelected, onCapClick, onCapSubmit }) => {
-
-    // Reference to the Cap div
-    const CapRef = useRef(null); 
-
-    // Create a state to indicate if the mouse is down
+const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, triggerMotion }) => {
     const [isMouseDown, setIsMouseDown] = useState(false);
-
-    // Create a state to store the distance and angle of the arrow
     const [distance, setDistance] = useState(100); // Default distance
-    const [angle, setAngle] = useState(0); // Default angle
+    const [angle_corrected, setAngleCorrected] = useState(0); // Default angle
+    const capRef = useRef(null); // Reference to the cap div
 
-    // --------------------------------------------------------------- 
-    //   Initial positions
-    // --------------------------------------------------------------- 
-    // Adjust the initialPosition to be the top-left corner of the Cap
     const capStyle = {
-        width: `${capRadius * 2}px`,
-        height: `${capRadius * 2}px`,
-        borderRadius: '50%',
-        backgroundColor: isSelected ? 'red' : 'black',
+        width: `${cap_radius * 2}px`,
+        height: `${cap_radius * 2}px`,
         position: 'absolute',
-        left: `${capCenter.x - capRadius}px`,
-        top: `${capCenter.y - capRadius}px`,
+        left: `${initialPosition.x - cap_radius}px`,
+        top: `${initialPosition.y - cap_radius}px`,
+        backgroundImage: 'url("/icons/cap_f1.svg")',
+        backgroundSize: 'contain',
+        backgroundRepeat: 'no-repeat',
+        cursor: 'pointer'
     };
 
-    // Handle Click on the Cap
+    const centerX = initialPosition.x;
+    const centerY = initialPosition.y;
+
     const handleCapClick = (e) => {
-        const dx = e.clientX - capCenter.x;
-        const dy = -(e.clientY - capCenter.y);
-        const distanceFromCenterCap = Math.round(Math.sqrt(dx ** 2 + dy ** 2));
-        if (distanceFromCenterCap <= capRadius) {
+        const dx = e.clientX - centerX;
+        const dy = centerY - e.clientY;
+        const distanceFromCenter = Math.sqrt(dx ** 2 + dy ** 2);
+        if (distanceFromCenter <= cap_radius) {
             onCapClick();
         }
-        console.log("Cap clicked: ", capIndex);
-        console.log("Distance from center: ", distanceFromCenterCap)
     };
 
-    // --------------------------------------------------------------- 
-    // Arrow creation when a Cap is selected and pressing the mouse on 
-    // --------------------------------------------------------------- 
-    // Reset isMouseDown state when isSelected state changes
-    // if a cap is just selected, then the mouse is not down 
     useEffect(() => {
         if (isSelected) {
-            setIsMouseDown(true);
+            setIsMouseDown(false);
         }
     }, [isSelected]);
 
-    // Create the effect to create the arrow distance and angle
     useEffect(() => {
-
-        // Listen to document-level events for mouse up and move
         document.onmouseup = () => setIsMouseDown(false);
 
         const handleMouseMove = (e) => {
-            if (isSelected && isMouseDown) {
-                // Distance to the Cap center
-                const dx = e.clientX - capCenter.x;
-                const dy = - (e.clientY - capCenter.y);
-                const distance = Math.round(Math.min(
-                    Math.max(
-                        Math.sqrt(dx ** 2 + dy ** 2),
-                        capRadius
-                    ),
-                    200
-                ));
+            if (isMouseDown && isSelected) {
+                const dx = e.clientX - centerX;
+                const dy = centerY - e.clientY;
+                const distance = Math.round(Math.sqrt(dx ** 2 + dy ** 2));
+                const angle = Math.round(Math.atan2(dy, dx) * (180 / Math.PI));
+                const angle_corrected = Math.round(angle < 0 ? 360 + angle : angle);
                 setDistance(distance);
-
-                // Calculate angle of the power arrow and correct the angle if it is negative
-                const angle_raw = Math.atan2(dy, dx) * (180 / Math.PI);
-                const angle = Math.round(angle_raw < 0 ? 360 + angle_raw : angle_raw);
-                setAngle(angle);
+                setAngleCorrected(angle_corrected);
             }
         };
 
         document.onmousemove = handleMouseMove;
 
-        // When that Cap is clicked (onmousedown) it will activate the mouse down state
-        // hence, the handleMouseMove will be called, so that the states distance and angle are updated
-        const currentCapRef = CapRef.current; // Copy 'CapRef.current' to a variable
-        if (currentCapRef) {
-            currentCapRef.onmousedown = () => setIsMouseDown(true);
+        const currentcapRef = capRef.current;
+        if (currentcapRef) {
+            currentcapRef.onmousedown = () => setIsMouseDown(true);
         }
 
-        // Clean up the event listeners when the component unmounts
         return () => {
             document.onmouseup = null;
             document.onmousemove = null;
-            if (currentCapRef) {
-                currentCapRef.onmousedown = null;
+            if (currentcapRef) {
+                currentcapRef.onmousedown = null;
             }
         };
-
-    }, [isMouseDown, isSelected, distance, angle, capCenter]);
-
-    // ---------------------------------------------------------------
-    // ---------------------------------------------------------------
-
-    // --------------------------------------------------------------- 
-    // Cap Submit Arrow power 
-    // --------------------------------------------------------------- 
+    }, [isMouseDown, isSelected, centerX, centerY, cap_radius]);
 
     useEffect(() => {
-        // Define the handler that will be triggered at each keydown
-        const handleKeyDown = (e) => {
-            if (e.key === 'Enter') {
-                // handleCapSubmit = (capIndex, distance, angle)
-                onCapSubmit(capIndex, distance, angle);
+        const handleKeyPress = (e) => {
+            if (e.key === 'Enter' && isSelected) {
+                triggerMotion(index, distance, angle_corrected);
             }
         };
-    
-        // Call the handler when a keydown is pressed at any place of the page (document)
-        if (isSelected) {
-            document.addEventListener('keydown', handleKeyDown);
-        }
-    
+
+        document.addEventListener('keydown', handleKeyPress);
+
         return () => {
-            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keydown', handleKeyPress);
         };
-    }, [isSelected, capIndex, distance, angle, onCapSubmit]);
+    }, [isSelected, triggerMotion, distance, angle_corrected, index]);
 
     return (
-        <div style={capStyle} onClick={handleCapClick}>
-            {isSelected && <CapArrow capRadius={capRadius} distance={distance} angle={angle} />}
+        <div ref={capRef} style={capStyle} onClick={handleCapClick}>
+            {isSelected && <Arrow cap_radius={cap_radius} centerX={centerX} centerY={centerY} distance={distance} angle_corrected={angle_corrected} />}
         </div>
     );
-
 };
 
 export default Cap;

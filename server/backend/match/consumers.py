@@ -29,11 +29,20 @@ class MatchConsumer(AsyncWebsocketConsumer):
         left_formation = data['left_formation']
         right_formation = data['right_formation']
 
+        # If provided, get the scale factor and margins for transforming 2D coordinates
+        scale_factor = tuple(data.get('scale_factor', (1, 1)))
+        margin = tuple(data.get('margin', (0, 0)))
+
         # Initial setup
         X_initial = match.initial_setup(left_formation, right_formation)
+        X_initial = X_initial.tolist()
+
+        # Scale and adjust coordinates
+        X_scaled = match.adjust_coordinates(positions=X_initial, scale_factor=scale_factor, margin=margin)
 
         response = {
-            'initial_positions': X_initial.tolist(),
+            'initial_positions': X_initial,
+            'scaled_positions': X_scaled
         }
         await self.send(text_data=json.dumps(response))
 

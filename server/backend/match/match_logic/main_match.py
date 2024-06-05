@@ -34,7 +34,12 @@ class Match:
     # ----------------------------------------------------------------- #
     #                  Main Function: create_formation                  #
     # ----------------------------------------------------------------- #
-    def initial_setup(self, left_formation, right_formation):
+    def initial_setup(self, left_formation, right_formation, debug_formation=None):
+        """
+        Provides the namings for the formations and the debug formation in case
+        we want to start the match in a given formation providing the 2D arrays
+        manually in the formations debug section.
+        """
         formation_producer = formations.FormationProducer(
             width=self.width,
             height=self.height,
@@ -44,7 +49,7 @@ class Match:
             ball_radii=self.ball_radii,
         )
         self.X, self.R, self.M, self.team_mapping = formation_producer.setup_match_formation(
-            left_formation, right_formation
+            left_formation, right_formation, debug_formation=debug_formation
         )
         self.motion = motion.Motion(
             R=self.R,

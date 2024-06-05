@@ -28,13 +28,14 @@ class MatchConsumer(AsyncWebsocketConsumer):
         print("Here: Creating formation")
         left_formation = data['left_formation']
         right_formation = data['right_formation']
+        debug_formation = data.get('debug_formation')
 
         # If provided, get the scale factor and margins for transforming 2D coordinates
         scale_factor = tuple(data.get('scale_factor', (1, 1)))
         margin = tuple(data.get('margin', (0, 0)))
 
         # Initial setup
-        X_initial = match.initial_setup(left_formation, right_formation)
+        X_initial = match.initial_setup(left_formation, right_formation, debug_formation=debug_formation)
         X_initial = X_initial.tolist()
 
         # Scale and adjust coordinates

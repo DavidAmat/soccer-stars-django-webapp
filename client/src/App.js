@@ -31,7 +31,8 @@ const App = () => {
             const formationPayload = {
                 action: "create_formation",
                 left_formation: "formation1",
-                right_formation: "formation2"
+                right_formation: "formation2",
+                // debug_formation: "debug_v1"
             };
             console.log("Sending to WebSocket:", formationPayload);
             ws.send(JSON.stringify(formationPayload));

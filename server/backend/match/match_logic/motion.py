@@ -87,13 +87,18 @@ class Motion:
         latency_ms = int(np.round(latency, 3) * 1000)
         return positions, velocities, latency_ms
 
-    def simulate_field_motion(self, X, V, max_iterations=5000, friction_interval=50):
+    def simulate_field_motion(self, X, V, max_iterations=5000, friction_interval=50, truncate_motion_to_step=None):
         positions = [X.copy()]
         velocities = [V.copy()]
+        if truncate_motion_to_step is not None:
+            max_iterations = truncate_motion_to_step
 
         iteration = 0
         start_time = time.time()
         while iteration < max_iterations:
+            # print(f"iteration: {iteration}")
+            if iteration == 320:
+                print("Here")
             V_next = self.cr.resolve_field_collision(X=X, V=V)
             if iteration % friction_interval == 0:
                 V_next = self.apply_smooth_friction(V=V_next)
@@ -135,7 +140,7 @@ class Motion:
         # to create the motion of the caps moving from the X to X_new
         timesteps = 100
         Xs = []
-        for t in range(timesteps):
+        for t in range(timesteps + 1):
             x_t = X + (X_new - X) * t / timesteps
             Xs.append(x_t)
         return Xs
@@ -174,16 +179,17 @@ class Motion:
 
             # Remove caps outside the LEFT/RIGHT goal (depending on the iteration)
             for cap_idx_in_goal in np.where(mask)[0]:
-                x_cap_inside_goal, y_cap_inside_goal = X[cap_idx_in_goal]
+                x_cap_inside_goal, y_cap_inside_goal = X_final[cap_idx_in_goal]
 
                 # Get the displacements factors allowed to avoid collisions
-                X_test = X.copy()
+                X_test = X_final.copy()
                 kx, ky = self.select_kx_ky(
                     X_test=X_test,
                     cap_idx_in_goal=cap_idx_in_goal,
                     x_cap_inside_goal=x_cap_inside_goal,
                     y_cap_inside_goal=y_cap_inside_goal,
                     r=R[cap_idx_in_goal],
+                    is_left_goal=is_left_goal,
                 )
 
                 # Displace the cap outside the goal Kx times the radii on the x axis
@@ -214,10 +220,10 @@ class Motion:
         angle = 70 * y_departure_scale
         if is_left_goal:
             # LEFT GOAL
-            return x + kx * r, y + ky * r * np.tan(np.radians(angle))
+            return x + kx * r, y - ky * r * np.tan(np.radians(angle))
         else:
             # RIGHT GOAL
-            return x - kx * r, y + ky * r * np.tan(np.radians(angle))
+            return x - kx * r, y - ky * r * np.tan(np.radians(angle))
 
     def select_kx_ky(self, X_test, cap_idx_in_goal, x_cap_inside_goal, y_cap_inside_goal, r, is_left_goal=True):
         """
@@ -244,7 +250,7 @@ class Motion:
         )
 
         # Check if the updated position collides with any other cap
-        check_collision_after_displacement = len(self.cr.get_cap_collisions(X_test)) > 0
+        check_collision_after_displacement = self.check_if_cap_is_in_colliding(X_test, cap_idx_in_goal)
 
         # Create a for loop modifying  the kx argument until we find a valid position
         # In case we don't find a valid position, we will loop for the ky argument
@@ -253,16 +259,34 @@ class Motion:
             return kx, ky
 
         # If there are collisions
-        while check_collision_after_displacement:
-            for kx in [3.5, 4, 4.5, 5, 5.5]:
+        it_num = 0
+        max_iterations = 100
+        while check_collision_after_displacement and it_num < max_iterations:
+            it_num += 1
+            for kx in [3.5, 4, 4.5, 5, 5.5, 1.5, 2.5, 3]:
                 X_test[cap_idx_in_goal] = self.remove_cap_inside_goal(
                     x=x_cap_inside_goal, y=y_cap_inside_goal, r=r, kx=kx, ky=ky, is_left_goal=is_left_goal
                 )
-                check_collision_after_displacement = len(self.cr.get_cap_collisions(X_test)) > 0
+                check_collision_after_displacement = self.check_if_cap_is_in_colliding(X_test, cap_idx_in_goal)
                 if not check_collision_after_displacement:
                     break
-            ky += 0.25
+            # When we leave the for loop, we check if we found a valid position
+            # otherwise we trigger another grid search with a different factory ky
+            if not check_collision_after_displacement:
+                break
+            else:
+                ky += 0.25
         return kx, ky
+
+    def check_if_cap_is_in_colliding(self, X, cap_idx):
+        # Get the tuples of cap collisions
+        cap_collisions = self.cr.get_cap_collisions(X)
+
+        # Convert the list of tuples into a single list
+        l_cap_collisions = [cap for cap_tuple in cap_collisions for cap in cap_tuple]
+
+        # Check if the cap is in l_cap_collisions
+        return cap_idx in l_cap_collisions
 
 
 if __name__ == "__main__":

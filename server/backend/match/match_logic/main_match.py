@@ -59,7 +59,7 @@ class Match:
     # ----------------------------------------------------------------- #
     #                  Main Function: submit_arrow                      #
     # ----------------------------------------------------------------- #
-    def move_cap(self, cap_idx, arrow_power, angle, X_last):
+    def move_cap(self, cap_idx, arrow_power, angle, X_last, truncate_motion_to_step=None):
         """
         Main function callend in the MatchConsumer in consumers.py
         """
@@ -74,7 +74,7 @@ class Match:
         V[cap_idx] = arrow.initial_velocity
 
         # Simulate motion (assuming `simulate_motion` is a method in the `Motion` class)
-        X_hist, _, _ = self.motion.simulate_field_motion(X=X_last, V=V)
+        X_hist, _, _ = self.motion.simulate_field_motion(X=X_last, V=V, truncate_motion_to_step=truncate_motion_to_step)
 
         # --------------------------------------- #
         # Remove caps from inside the goal

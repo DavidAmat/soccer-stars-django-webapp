@@ -6,6 +6,7 @@ import dataclasses
 # Create a dataclass with Arrow properties
 # cap_index, arrow_length, angle, min_velocity = 0.1, cap_radius = 63, max_velocity=10, max_arrow_distance=200
 
+
 @dataclasses.dataclass
 class ArrowProperties:
     cap_index: int
@@ -15,8 +16,8 @@ class ArrowProperties:
     cap_radius: int = 63
     max_velocity: int = 10
     max_arrow_distance: int = 200
-    
-   
+
+
 class Arrow:
     def __init__(self, arrow_props: ArrowProperties):
         self.arrow_props = arrow_props
@@ -28,7 +29,6 @@ class Arrow:
         # Get velocity in both modulus and vectorial form
         self.mod_initial_velocity = self.map_arrow_length_to_mod_initial_velocity()
         self.initial_velocity = np.array(self.mod_initial_velocity * self.direction)
-        
 
     def map_arrow_length_to_mod_initial_velocity(self):
         """
@@ -39,6 +39,7 @@ class Arrow:
         #  Normalization Ratio
         # ------------------------------------------------- #
         # Difference betweeen arrow length and cap radius
+        assert arrow_props.arrow_length >= arrow_props.cap_radius, "Arrow length must be greater than cap radius"
         diff_arrow_cap = arrow_props.arrow_length - arrow_props.cap_radius
 
         # Maximum allowed difference for diff_arrow_cap
@@ -46,7 +47,7 @@ class Arrow:
 
         # Ratio of the difference to the maximum allowed difference
         diff_ratio = diff_arrow_cap / max_diff_arrow_cap
-        
+
         # ------------------------------------------------- #
         #  New velocity range
         # ------------------------------------------------- #
@@ -54,7 +55,8 @@ class Arrow:
         range_velocities_px_t = arrow_props.max_velocity - arrow_props.min_velocity
 
         # Linear mapping of the arrow_length to the velocity
-        return diff_ratio  * range_velocities_px_t + arrow_props.min_velocity
+        return diff_ratio * range_velocities_px_t + arrow_props.min_velocity
+
 
 if __name__ == "__main__":
     # Instantiate ArrowProperties

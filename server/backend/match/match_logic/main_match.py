@@ -1,8 +1,19 @@
 import numpy as np
 from match.match_logic import game_entities, formations, motion
 
+
 class Match:
-    def __init__(self, width=1920, height=1080, cap_radii=1.0, cap_mass=1.0, goal_size=None, goal_depth=None, ball_mass=0.5, ball_radii=0.5):
+    def __init__(
+        self,
+        width=1920,
+        height=1080,
+        cap_radii=1.0,
+        cap_mass=1.0,
+        goal_size=None,
+        goal_depth=None,
+        ball_mass=0.5,
+        ball_radii=0.5,
+    ):
         self.width = width
         self.height = height
         self.cap_radii_px = cap_radii * 63
@@ -25,12 +36,12 @@ class Match:
     # ----------------------------------------------------------------- #
     def initial_setup(self, left_formation, right_formation):
         formation_producer = formations.FormationProducer(
-            width=self.width, 
-            height=self.height, 
-            cap_radii=self.cap_radii, 
+            width=self.width,
+            height=self.height,
+            cap_radii=self.cap_radii,
             cap_mass=self.cap_mass,
             ball_mass=self.ball_mass,
-            ball_radii=self.ball_radii
+            ball_radii=self.ball_radii,
         )
         self.X, self.R, self.M, self.team_mapping = formation_producer.setup_match_formation(
             left_formation, right_formation
@@ -41,8 +52,8 @@ class Match:
             min_velocity=0.1,
             boundaries=self.boundaries,
             goal_size=self.goal_size,
-            goal_depth=self.goal_depth
-        ) 
+            goal_depth=self.goal_depth,
+        )
         return self.X
 
     # ----------------------------------------------------------------- #
@@ -69,11 +80,17 @@ class Match:
         # Remove caps from inside the goal
         # --------------------------------------- #
         # If the cap center is inside the goal, remove it
+        # making a trajectory from the last position to the outside of the goal
+        # X_move_outside_goal is a (timesteps, n, 2) array
+        X_move_outside_goal = self.motion.simulate_cap_moving_from_goal(X=X_hist[-1], R=self.R)
+
+        # Integrate the trajectory to the X_hist
+        X_hist.extend(X_move_outside_goal)
 
         return X_hist  # Return the list of X positions of the system at each timestep
-    
+
     @staticmethod
-    def adjust_coordinates(positions, scale_factor=(1,1), margin=(0,0)):
+    def adjust_coordinates(positions, scale_factor=(1, 1), margin=(0, 0)):
         scale_factor_x, scale_factor_y = scale_factor
         margin_x, margin_y = margin
         adjusted_positions = []
@@ -83,6 +100,7 @@ class Match:
             new_y = y * scale_factor_y + margin_y
             adjusted_positions.append([new_x, new_y])
         return adjusted_positions
+
 
 # Example usage
 if __name__ == "__main__":

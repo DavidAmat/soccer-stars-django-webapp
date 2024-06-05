@@ -1,6 +1,68 @@
 # collision_resolver.py
 import numpy as np
 from typing import Tuple, List
+from dataclasses import dataclass, field
+
+
+@dataclass
+class GameConstants:
+    R: np.ndarray
+    w: float
+    h: float
+    D: float
+    g: float
+
+    TL: tuple = field(default=(0, 0), init=False)
+    BL: tuple = field(init=False)
+    TR: tuple = field(init=False)
+    BR: tuple = field(init=False)
+    TLP: tuple = field(init=False)
+    BLP: tuple = field(init=False)
+    TLN: tuple = field(init=False)
+    BLN: tuple = field(init=False)
+    TRP: tuple = field(init=False)
+    BRP: tuple = field(init=False)
+    TRN: tuple = field(init=False)
+    BRN: tuple = field(init=False)
+
+    # Horizontal limits
+    xnet_left: float = field(init=False)
+    xfield_left: float = field(init=False)
+    xfield_right: float = field(init=False)
+    xnet_right: float = field(init=False)
+
+    # Vertical limits
+    yfield_top: float = field(init=False)
+    yfield_bottom: float = field(init=False)
+    ynet_top_lateral: float = field(init=False)
+    ynet_bottom_lateral: float = field(init=False)
+    y_mid_field: float = field(init=False)
+
+    def __post_init__(self):
+        self.BL = (0, self.h)
+        self.TR = (self.w, 0)
+        self.BR = (self.w, self.h)
+        self.TLP = (0, (self.h - self.g) / 2)
+        self.BLP = (0, (self.h + self.g) / 2)
+        self.TLN = (-self.D, (self.h - self.g) / 2)
+        self.BLN = (-self.D, (self.h + self.g) / 2)
+        self.TRP = (self.w, (self.h - self.g) / 2)
+        self.BRP = (self.w, (self.h + self.g) / 2)
+        self.TRN = (self.w + self.D, (self.h - self.g) / 2)
+        self.BRN = (self.w + self.D, (self.h + self.g) / 2)
+
+        # Horizontal limits
+        self.xnet_left = self.TLN[0]
+        self.xfield_left = self.TLP[0]
+        self.xfield_right = self.TRP[0]
+        self.xnet_right = self.TRN[0]
+
+        # Vertical limits
+        self.yfield_top = self.TL[1]
+        self.yfield_bottom = self.BL[1]
+        self.ynet_top_lateral = self.TLP[1]
+        self.ynet_bottom_lateral = self.BLP[1]
+        self.y_mid_field = (self.ynet_top_lateral + self.ynet_bottom_lateral) / 2
 
 
 class CollisionResolver:
@@ -23,6 +85,7 @@ class CollisionResolver:
         self.goal_depth = goal_depth
         self.goal_size = goal_size
         self.R_dist = self.get_radius_distances_matrix()
+        self.gc = GameConstants(R=R, w=self.w, h=self.h, D=goal_depth, g=goal_size)
 
     # ------------------------------------------------- #
     #       Get Final Velocity
@@ -53,19 +116,16 @@ class CollisionResolver:
         # If not collisions (empty lists) return the X_next and V
         if not edge_collisions and not cap_collisions:
             return V
-        
+
         # If collisions, resolve the collision priority (priority on cap collisions)
         r_edge_collisions = self.resolve_collision_priority(
-            edge_collisions=edge_collisions, 
-            cap_collisions=cap_collisions
+            edge_collisions=edge_collisions, cap_collisions=cap_collisions
         )
 
         # ************************ #
         #   Cap Collisions
         # ************************ #
-        V_coll_cap_after, idx_coll_cap_final = self.resolve_cap_collisions(
-            cap_collisions=cap_collisions, V=V, X=X
-        )
+        V_coll_cap_after, idx_coll_cap_final = self.resolve_cap_collisions(cap_collisions=cap_collisions, V=V, X=X)
 
         # ************************ #
         #   Edge Collisions
@@ -91,7 +151,7 @@ class CollisionResolver:
                 Vf[idx] = V_coll_cap_after[i]
 
         return Vf
-    
+
     def resolve_field_collision(self, X, V):
         """
         Main function to resolve collisions. It takes the position matrix X and the velocity matrix V
@@ -118,26 +178,25 @@ class CollisionResolver:
         # If not collisions (empty lists) return the X_next and V
         if not edge_collisions and not cap_collisions:
             return V
-        
+
         # If collisions, resolve the collision priority (priority on cap collisions)
         first_priority_edge_coll, second_priority_edge_coll = self.resolve_multiple_collision(
-            edge_collisions=edge_collisions, 
-            cap_collisions=cap_collisions
+            edge_collisions=edge_collisions, cap_collisions=cap_collisions
         )
 
         # ************************ #
         #   Cap Collisions
         # ************************ #
-        V_coll_cap_after, idx_coll_cap_final = self.resolve_cap_collisions(
-            cap_collisions=cap_collisions, V=V, X=X
-        )
+        V_coll_cap_after, idx_coll_cap_final = self.resolve_cap_collisions(cap_collisions=cap_collisions, V=V, X=X)
 
         # ********************************** #
         #   First Priority Edge Collisions
         # ********************************** #
         # Get a list of tuples with the cap index, the coordinate index (0 for x and 1 for y) and the new velocity
         l_velocity_first_coll = self.resolve_edge_collisions(V=V, r_edge_collisions=first_priority_edge_coll)
-        l_velocity_second_coll = self.resolve_edge_collisions(V=V_coll_cap_after, r_edge_collisions=second_priority_edge_coll)
+        l_velocity_second_coll = self.resolve_edge_collisions(
+            V=V_coll_cap_after, r_edge_collisions=second_priority_edge_coll
+        )
 
         # ************************ #
         #   Final velocities
@@ -169,7 +228,7 @@ class CollisionResolver:
         # if the ball is the one hitting the net (goal), reduce the velocity by 90%
         for cap_idx, edge_idx in field_idx_collisions:
             # Net collisions
-            if edge_idx in [0,1,2,5,6,7]:
+            if edge_idx in [0, 1, 2, 5, 6, 7]:
                 # Check if the cap is the ball (last index of Vf rows)
                 if cap_idx == Vf.shape[0] - 1:
                     Vf[cap_idx] *= 0.1
@@ -177,8 +236,6 @@ class CollisionResolver:
                     Vf[cap_idx] *= 0.5
 
         return Vf
-
-
 
     # ------------------------------------------------- #
     #   Radii distances (threshold for cap collisions)
@@ -189,9 +246,8 @@ class CollisionResolver:
         # Radii matrix: Create a 2D array representing the sum of radii for each pair of caps
         R_i = R[:, np.newaxis]  # Shape (n, 1)
         R_j = R[np.newaxis, :]  # Shape (1, n)
-        R_distances = R_i + R_j  # Shape (n, n) 
+        R_distances = R_i + R_j  # Shape (n, n)
         return R_distances
-
 
     # ------------------------------------------------- #
     #       Cap collisions
@@ -201,7 +257,6 @@ class CollisionResolver:
         Returns a list of tuples where each tuple contains the indices of the colliding caps.
         Example: [(0, 1), (2, 3), ...] means that cap 0 is colliding with cap 1 and cap 2 is colliding with cap 3.
         """
-        
 
         # Position matrices to allow broadcasting
         X_i = X_next[:, np.newaxis, :]  # Shape (n, 1, 2)
@@ -211,14 +266,14 @@ class CollisionResolver:
         delta_Xij = X_i - X_j  # Shape (n, n, 2)
 
         # The norm of the result is the distance between each pair of points
-        modulus_pairs = np.sum((delta_Xij) ** 2, axis=2) # Shape (n, n)
+        modulus_pairs = np.sum((delta_Xij) ** 2, axis=2)  # Shape (n, n)
         distances = np.sqrt(modulus_pairs)  # Shape (n, n)
 
         # Boolean masking indicating if cap i and cap j are colliding (distance < 2 * R_dist)
         # where self.R_dist is the sum of the radii of the two caps
         collision_matrix = distances <= self.R_dist
 
-        np.fill_diagonal(collision_matrix, False) # Exclude self-collisions
+        np.fill_diagonal(collision_matrix, False)  # Exclude self-collisions
 
         # Make it upper triangular
         collision_matrix = np.triu(collision_matrix)
@@ -231,7 +286,7 @@ class CollisionResolver:
         corrected_colliding_indices = self.ensure_single_cap_collision(distances, colliding_indices)
 
         return corrected_colliding_indices
-    
+
     def ensure_single_cap_collision(self, distances, cap_collisions):
         """
         Takes the output list of tuples from get_cap_collisions and checks that a single cap cannot be in multiple collisions.
@@ -264,15 +319,15 @@ class CollisionResolver:
         # Convert the dictionary back to a list of tuples
         corrected_collisions = [(i, j) for i, caps in d_caps_coll.items() for j in caps]
         return corrected_collisions
-    
+
     # ------------------------------------------------- #
     #       Edge collisions
     # ------------------------------------------------- #
     def get_edge_collisions(self, X_next):
         """
-        Matrix of shape (n, 4) where n is the number of caps. 
+        Matrix of shape (n, 4) where n is the number of caps.
         The element (i, j) is True if cap i is colliding with edge j.
-        Edge order (startin from left edge and going counter-clockwise): 
+        Edge order (startin from left edge and going counter-clockwise):
         [left, top, right, bottom] -> [0, 1, 2, 3]
 
         Converts the final collision matrix (n x 4) into a list of tuples
@@ -304,7 +359,7 @@ class CollisionResolver:
         colliding_indices = [tuple(idx) for idx in colliding_indices]
 
         return colliding_indices
-    
+
     def get_field_collisions(self, X_prev, X_next):
         """
         Matrix of shape (n, 4) where n is the number of caps.
@@ -316,47 +371,29 @@ class CollisionResolver:
         where the first element is the cap index and the second the edge index
         like [(cap_i, edge_j), ...]
         """
-        R = self.R
-        w, h = self.boundaries
-        D = self.goal_depth
-        g = self.goal_size
-
-        # Calculate goal positions
-        TL = (0,0)
-        BL = (0, h)
-        TR = (w, 0)
-        BR = (w, h)
-        TLP = (0, (h - g) / 2)
-        BLP = (0, (h + g) / 2)
-        TLN = (-D, (h - g) / 2)
-        BLN = (-D, (h + g) / 2)
-        TRP = (w, (h - g) / 2)
-        BRP = (w, (h + g) / 2)
-        TRN = (w + D, (h - g) / 2)
-        BRN = (w + D, (h + g) / 2)
 
         # Initialize edge collision matrix
         edge_collision_matrix = np.zeros((self.n, 12), dtype=bool)
 
         for i in range(self.n):
             xn, yn = X_next[i]
-            xp, yp = X_prev[i]
-            r = R[i]
+            _, yp = X_prev[i]
+            r = self.gc.R[i]
 
             # ------------------------------------------------- #
             #  Define constants
             # ------------------------------------------------- #
             # Horizontal limits
-            xnet_left = TLN[0]
-            xfield_left = TLP[0]
-            xfield_right = TRP[0]
-            xnet_right = TRN[0]
+            xnet_left = self.gc.TLN[0]
+            xfield_left = self.gc.TLP[0]
+            xfield_right = self.gc.TRP[0]
+            xnet_right = self.gc.TRN[0]
 
             # Vertical limits
-            yfield_top = TL[1]
-            yfield_bottom = BL[1]
-            ynet_top_lateral = TLP[1]
-            ynet_bottom_lateral = BLP[1]
+            yfield_top = self.gc.TL[1]
+            yfield_bottom = self.gc.BL[1]
+            ynet_top_lateral = self.gc.TLP[1]
+            ynet_bottom_lateral = self.gc.BLP[1]
 
             # ------------------------------------------------- #
             #  Left Field Collisions
@@ -366,14 +403,13 @@ class CollisionResolver:
             # ***************************** #
             # since nothing can go through the net, we can just check if the cap surpases the left net
             edge_collision_matrix[i, 0] = xn - r <= xnet_left
-            
+
             # ***************************** #
             # Collision with top lateral net
             # ***************************** #
             # Chech the cap collides with the top lateral of the left goal net
             edge_collision_matrix[i, 1] = (
-                yp - r > ynet_top_lateral and yn - r <= ynet_top_lateral and
-                xn - r <= xfield_left
+                yp - r > ynet_top_lateral and yn - r <= ynet_top_lateral and xn - r <= xfield_left
             )
 
             # ***************************** #
@@ -381,8 +417,7 @@ class CollisionResolver:
             # ***************************** #
             # Check the cap collides with the bottom lateral of the left goal net
             edge_collision_matrix[i, 2] = (
-                yp + r < ynet_bottom_lateral and yn + r >= ynet_bottom_lateral and
-                xn - r <= xfield_left
+                yp + r < ynet_bottom_lateral and yn + r >= ynet_bottom_lateral and xn - r <= xfield_left
             )
 
             # ***************************** #
@@ -390,8 +425,7 @@ class CollisionResolver:
             # ***************************** #
             # Check the cap collides with the field left edge on top ynet_top_lateral
             edge_collision_matrix[i, 3] = (
-                xn - r <= xfield_left and
-                yp - r < ynet_top_lateral and yn - r <= ynet_top_lateral
+                xn - r <= xfield_left and yp - r < ynet_top_lateral and yn - r <= ynet_top_lateral
             )
 
             # ***************************** #
@@ -399,9 +433,11 @@ class CollisionResolver:
             # ***************************** #
             # Check the cap collides with the field left edge on bottom ynet_bottom_lateral
             edge_collision_matrix[i, 4] = (
-                xn - r <= xfield_left and
+                xn - r <= xfield_left
+                and
                 # yn + r > ynet_bottom_lateral
-                yp + r > ynet_bottom_lateral and yn + r >= ynet_bottom_lateral
+                yp + r > ynet_bottom_lateral
+                and yn + r >= ynet_bottom_lateral
             )
 
             # ------------------------------------------------- #
@@ -411,17 +447,14 @@ class CollisionResolver:
             # Collision with the main right net
             # ***************************** #
             # since nothing can go through the net, we can just check if the cap surpases the right net
-            edge_collision_matrix[i, 5] = (
-                xn + r >= xnet_right
-            )
+            edge_collision_matrix[i, 5] = xn + r >= xnet_right
 
             # ***************************** #
             # Collision with top lateral net
             # ***************************** #
             # Check the cap collides with the top lateral of the right goal net
             edge_collision_matrix[i, 6] = (
-                yp - r > ynet_top_lateral and yn - r <= ynet_top_lateral and
-                xn + r >= xfield_right
+                yp - r > ynet_top_lateral and yn - r <= ynet_top_lateral and xn + r >= xfield_right
             )
 
             # ***************************** #
@@ -429,8 +462,7 @@ class CollisionResolver:
             # ***************************** #
             # Check the cap collides with the bottom lateral of the right goal net
             edge_collision_matrix[i, 7] = (
-                yp + r < ynet_bottom_lateral and yn + r >= ynet_bottom_lateral and
-                xn + r >= xfield_right
+                yp + r < ynet_bottom_lateral and yn + r >= ynet_bottom_lateral and xn + r >= xfield_right
             )
 
             # ***************************** #
@@ -438,8 +470,7 @@ class CollisionResolver:
             # ***************************** #
             # Check the cap collides with the field right edge on top ynet_top_lateral
             edge_collision_matrix[i, 8] = (
-                xn + r >= xfield_right and
-                yp - r < ynet_top_lateral and yn - r <= ynet_top_lateral
+                xn + r >= xfield_right and yp - r < ynet_top_lateral and yn - r <= ynet_top_lateral
             )
 
             # ***************************** #
@@ -447,8 +478,7 @@ class CollisionResolver:
             # ***************************** #
             # Check the cap collides with the field right edge on bottom ynet_bottom_lateral
             edge_collision_matrix[i, 9] = (
-                xn + r >= xfield_right and
-                yp + r > ynet_bottom_lateral and yn + r >= ynet_bottom_lateral
+                xn + r >= xfield_right and yp + r > ynet_bottom_lateral and yn + r >= ynet_bottom_lateral
             )
 
             # ------------------------------------------------- #
@@ -464,7 +494,6 @@ class CollisionResolver:
             # ***************************** #
             edge_collision_matrix[i, 11] = yn + r >= yfield_bottom
 
-
         # Convert to list of tuples
         colliding_indices = np.argwhere(edge_collision_matrix)
         colliding_indices = [tuple(idx) for idx in colliding_indices]
@@ -475,22 +504,18 @@ class CollisionResolver:
         # with an element that will revert the y velocity to a positive value,
         # 2 is a collision with an element that will revert the x velocity to a negative value
         # and 3 is a collision with an element that will revert the y velocity to a negative value.
-        map_collision_to_edge = {
-            0: 0, 1: 1, 2: 3, 3: 0, 4: 0, 5: 2, 6: 1, 7: 3, 8: 2, 9: 2, 10: 1, 11: 3
-        }
-
+        map_collision_to_edge = {0: 0, 1: 1, 2: 3, 3: 0, 4: 0, 5: 2, 6: 1, 7: 3, 8: 2, 9: 2, 10: 1, 11: 3}
 
         colliding_edges = [(idx[0], map_collision_to_edge[idx[1]]) for idx in colliding_indices]
 
-
         return colliding_indices, colliding_edges
-    
+
     # ------------------------------------------------- #
     #       Resolve multiple collisions
     # ------------------------------------------------- #
     def resolve_collision_priority(self, edge_collisions, cap_collisions):
         """
-        Gets all the caps with the collisions and imposes that the cap indices that are 
+        Gets all the caps with the collisions and imposes that the cap indices that are
         present in a cap collision are not present in an edge collision. If a cap is present
         in both, the cap collision takes priority.
 
@@ -513,10 +538,10 @@ class CollisionResolver:
                 resolved_edge_collisions.append((cap_i, edge_idx))
 
         return resolved_edge_collisions
-    
+
     def resolve_multiple_collision(self, edge_collisions, cap_collisions):
         """
-        Gets all the caps with the collisions and imposes that the cap indices that are 
+        Gets all the caps with the collisions and imposes that the cap indices that are
         present in a cap collision are not present in the first priority edge_collisions.
         But, for the edge collisions whose cap is involved into a cap_collision
         first priority is given to the cap_collisions and once we have the output velocity
@@ -550,7 +575,7 @@ class CollisionResolver:
                 second_priority_edge_collisions.append((cap_i, edge_idx))
 
         return first_priority_edge_collisions, second_priority_edge_collisions
-    
+
     # ------------------------------------------------- #
     #       Caps Collision Velocity resolver
     # ------------------------------------------------- #
@@ -583,14 +608,13 @@ class CollisionResolver:
             else:
                 V_coll_cap_final = np.vstack((V_coll_cap_final, V_coll_cap_after))
                 idx_coll_cap_final = np.hstack((idx_coll_cap_final, coll_idx_pair))
-        
-        return V_coll_cap_final, idx_coll_cap_final
 
+        return V_coll_cap_final, idx_coll_cap_final
 
     def resolve_cap_pair_collision(self, V: np.array, X: np.array, M: np.array):
         """
         Gets the velocities from two cap indices (i,j) colliding, where the V shape is (2,2) and takes
-        that pair positions and masses to calculate the new velocities after the collision. The mass 
+        that pair positions and masses to calculate the new velocities after the collision. The mass
         vector M is a vector of masses for each body of shape (2,).
         """
         V_new = np.copy(V)
@@ -643,7 +667,7 @@ class CollisionResolver:
         Receives r_edge_collisions as a list of tuples with the cap index, the edge index and the new velocity.
         Returns a list of tuples with the cap index, the coordinate index (0 for x and 1 for y) and the new velocity.
         Basically, detects how to flip the sign of the velocity based on the edge collision.
-        
+
         Returns
         -------
         List of tuples
@@ -651,7 +675,7 @@ class CollisionResolver:
         """
         if len(r_edge_collisions) == 0:
             return []
-        
+
         # Createa list of tuples of 3 elements (cap index, coordinate index, new velocity)
         # where coordinate index is 0 for x and 1 for y
         new_velocities_components = []
@@ -671,7 +695,7 @@ class CollisionResolver:
                 new_velocities_components.append((cap_idx, 1, -abs(V[cap_idx, 1])))
 
         return new_velocities_components
-    
+
     # ------------------------------------------------- #
     #       Momentum Conservation
     # ------------------------------------------------- #
@@ -695,9 +719,9 @@ class CollisionResolver:
 
         momentum_initial = np.sum(V_initial * M[:, np.newaxis], axis=0)
         momentum_final = np.sum(V_final * M[:, np.newaxis], axis=0)
-        
+
         return momentum_initial, momentum_final
-    
+
     # ------------------------------------------------- #
     #       Kinetic Energy Conservation
     # ------------------------------------------------- #
@@ -718,11 +742,10 @@ class CollisionResolver:
         bool
             True if kinetic energy is conserved, False otherwise.
         """
-        ke_initial = np.sum(0.5 * M * np.sum(V_initial ** 2, axis=1))
-        ke_final = np.sum(0.5 * M * np.sum(V_final ** 2, axis=1))
-        
-        return ke_initial, ke_final
+        ke_initial = np.sum(0.5 * M * np.sum(V_initial**2, axis=1))
+        ke_final = np.sum(0.5 * M * np.sum(V_final**2, axis=1))
 
+        return ke_initial, ke_final
 
 
 if __name__ == "__main__":
@@ -730,23 +753,27 @@ if __name__ == "__main__":
     w = 1920
     h = 1080
     X = np.array(
-        [[  1275,  530],
-        [1307,  500],
-        [1310,  700],
-        [1310,  560],
-        [20,  100],
-        ], dtype=np.float32
+        [
+            [1275, 530],
+            [1307, 500],
+            [1310, 700],
+            [1310, 560],
+            [20, 100],
+        ],
+        dtype=np.float32,
     )
     R = np.array([25, 25, 25, 25, 25], dtype=np.float32)
     M = np.array([1, 1, 1, 1, 1], dtype=np.float32)
 
     V = np.array(
-        [[2, 2],
-        [0, 0],
-        [0, 0],
-        [0, 0],
-        [-1, 0],
-        ], dtype=np.float32
+        [
+            [2, 2],
+            [0, 0],
+            [0, 0],
+            [0, 0],
+            [-1, 0],
+        ],
+        dtype=np.float32,
     )
     X_next = X + V
     cr = CollisionResolver(X, R, M)

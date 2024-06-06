@@ -15,9 +15,23 @@ const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, trigg
         left: `${initialPosition.x - cap_radius}px`,
         top: `${initialPosition.y - cap_radius}px`,
         backgroundImage: 'url("/icons/cap_f1.svg")',
-        backgroundSize: 'contain',
+        backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         cursor: 'pointer'
+    };
+
+    const indexStyle = {
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        color: 'black',
+        fontWeight: 'bold',
+        fontSize: '26px',
+        //font family
+        fontFamily: 'Montserrat, Arial, sans-serif',
+        pointerEvents: 'none', // Ensures the number does not interfere with clicking
+        userSelect: 'none', // Prevents text selection
     };
 
     const centerX = initialPosition.x;
@@ -86,6 +100,7 @@ const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, trigg
     return (
         <div ref={capRef} style={capStyle} onClick={handleCapClick}>
             {isSelected && <Arrow cap_radius={cap_radius} centerX={centerX} centerY={centerY} distance={distance} angle_corrected={angle_corrected} />}
+            <div style={indexStyle}>{index}</div>
         </div>
     );
 };

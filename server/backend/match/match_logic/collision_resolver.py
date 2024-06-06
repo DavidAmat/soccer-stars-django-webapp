@@ -194,7 +194,6 @@ class CollisionResolver:
         # ********************************** #
         # Get a list of tuples with the cap index, the coordinate index (0 for x and 1 for y) and the new velocity
         l_velocity_first_coll = self.resolve_edge_collisions(V=V, r_edge_collisions=first_priority_edge_coll)
-        
 
         # ************************ #
         #   Final velocities
@@ -218,9 +217,7 @@ class CollisionResolver:
         # ********************************** #
         # Get a list of tuples with the cap index, the coordinate index (0 for x and 1 for y) and the new velocity
         # for the second priority edge collisions
-        l_velocity_second_coll = self.resolve_edge_collisions(
-            V=Vf, r_edge_collisions=second_priority_edge_coll
-        )
+        l_velocity_second_coll = self.resolve_edge_collisions(V=Vf, r_edge_collisions=second_priority_edge_coll)
 
         # Iterate over the cap indices for the edge collisions that underwent first a cap collision
         if l_velocity_second_coll is not None and len(l_velocity_second_coll) > 0:

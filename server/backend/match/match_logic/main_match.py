@@ -30,16 +30,28 @@ class Match:
         self.M = None
         self.team_mapping = None
         self.motion: motion.Motion = None
+        self.score = [0, 0]
 
     # ----------------------------------------------------------------- #
     #                  Main Function: create_formation                  #
     # ----------------------------------------------------------------- #
-    def initial_setup(self, left_formation, right_formation, debug_formation=None):
+    def initial_setup(self, left_formation, right_formation, debug_formation=None, reset_score=True):
         """
         Provides the namings for the formations and the debug formation in case
         we want to start the match in a given formation providing the 2D arrays
         manually in the formations debug section.
+
+        If reset_score is True, the score is reset to 0-0. If false, the score is kept.
         """
+        if reset_score:
+            # Reset the score
+            self.score = [0, 0]
+
+        # Get the formations as attributes
+        self.left_formation = left_formation
+        self.right_formation = right_formation
+
+        # Reset the initial positions
         formation_producer = formations.FormationProducer(
             width=self.width,
             height=self.height,
@@ -89,8 +101,53 @@ class Match:
         # X_move_outside_goal is a (timesteps, n, 2) array
         X_move_outside_goal = self.motion.simulate_cap_moving_from_goal(X=X_hist[-1], R=self.R)
 
-        # Integrate the trajectory to the X_hist
-        X_hist.extend(X_move_outside_goal)
+        # --------------------------------------- #
+        # Check goal (only 1 goal allowed per movement)
+        # --------------------------------------- #
+        # First take the last position of the X_hist for each timestep
+        # and check if the cap is inside the goal
+        # If it is, add a goal to the score
+        # Consider also the timestep of the goal
+        left_goal_x = self.motion.cr.gc.xfield_left
+        right_goal_x = self.motion.cr.gc.xfield_right
+        radii_ball = self.R[-1]
+        has_goal = False
+
+        for i, X in enumerate(X_hist):
+            # Ball is always the last element in the X array
+            cap_position = X[-1]
+
+            # Get ball coordinates
+            x_ball, _ = cap_position
+
+            if x_ball + radii_ball < left_goal_x and not has_goal:
+                # If the ball inside the left goal, the right team has scored
+                self.score[1] += 1
+                print(f"Goal for right team at timestep {i}")
+                has_goal = True
+                break
+            elif x_ball - radii_ball > right_goal_x and not has_goal:
+                # If the ball inside the right goal, the left team has scored
+                self.score[0] += 1
+                print(f"Goal for left team at timestep {i}")
+                has_goal = True
+                break
+
+        # --------------------------------------- #
+        #   Post-movement decisions
+        # --------------------------------------- #
+        # If no goal, remove caps from the outside of the goal
+        if not has_goal:
+            # Integrate the trajectory to the X_hist
+            X_hist.extend(X_move_outside_goal)
+        else:
+            # If Goal
+            # Call the initial setup to reset the positions
+            # keeping the same score
+            X_restart = self.initial_setup(
+                left_formation=self.left_formation, right_formation=self.right_formation, reset_score=False
+            )
+            X_hist.extend([X_restart])
 
         return X_hist  # Return the list of X positions of the system at each timestep
 

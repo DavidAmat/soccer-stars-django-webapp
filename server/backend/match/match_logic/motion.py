@@ -136,6 +136,9 @@ class Motion:
         # First call move_cap_from_goal to get the new position of the caps
         X_new = self.move_cap_from_goal(X, R)
 
+        # Overwrite the last row (the ball will not be moved by this logic)
+        X_new[-1] = X[-1]
+
         # Given X and X_new, create an interpolation trajectory (simple, just linear)
         # to create the motion of the caps moving from the X to X_new
         timesteps = 100

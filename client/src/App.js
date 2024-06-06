@@ -11,11 +11,13 @@ const App = () => {
     const [time, setTime] = useState(0); // State for the clock
     const [intervalId, setIntervalId] = useState(null);
     const [isMotionInProgress, setIsMotionInProgress] = useState(false);
+    // Create the score as a state  
+    const [score, setScore] = useState([0, 0]);
 
 
     const LEFT_MARGIN = 207;
     const HORIZONTAL_MARGIN = 412;
-    const TOP_MARGIN = 183;
+    const TOP_MARGIN = 151;
     const DOWNSCALE_FACTOR_X = (1920 - HORIZONTAL_MARGIN) / 1920;
     const DOWNSCALE_FACTOR_Y = (1080 - TOP_MARGIN) / 1080;
 
@@ -50,6 +52,10 @@ const App = () => {
                 }));
                 setCapConfigs(configs);
                 positionsRef.current = response.initial_positions;
+            }
+            // Update score
+            if (response.score) {
+                setScore(response.score);
             }
             ws.close();
         };
@@ -93,10 +99,10 @@ const App = () => {
 
         ws.onmessage = (event) => {
             const response = JSON.parse(event.data);
-            if (response.positions) {
+            if (response.positions && response.score) {
                 setSelectedCap(null); // De-select the cap
                 const positions = response.positions;
-                updatePositionsOverTime(positions);
+                updatePositionsOverTime(positions, response.score);
             }
             ws.close();
         };
@@ -106,7 +112,7 @@ const App = () => {
         };
     };
 
-    const updatePositionsOverTime = (positions) => {
+    const updatePositionsOverTime = (positions, score) => {
         let timestep = 0;
 
         const interval = setInterval(() => {
@@ -123,6 +129,11 @@ const App = () => {
 
                 // Remember the last positions
                 positionsRef.current = positions[positions.length - 1];
+
+                // Update the score
+                if (score) {
+                    setScore(score);
+                }
             }
         }, 10); // 10ms delay between each timestep
     };
@@ -158,9 +169,9 @@ const App = () => {
                 ))}
             </div>
             <div className="score-container">
-                    <div className="score" id="score-team1">0</div>
+                    <div className="score" id="score-team1">{score[0]}</div>
                     <div className="clock">{formatTime(time)}</div>
-                    <div className="score" id="score-team2">0</div>
+                    <div className="score" id="score-team2">{score[1]}</div>
                 </div>
         </div>
     );

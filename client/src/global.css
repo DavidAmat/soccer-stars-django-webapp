@@ -1,3 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Concert+One&display=swap');
+
+
 body, html {
     margin: 0;
     padding: 0;
@@ -57,4 +61,46 @@ body, html {
 
 .start-button:hover {
     background-color: #45a049;
+}
+
+.score-container {
+    position: absolute;
+    top: 20px; /* Adjust as needed */
+    left: 45%;
+    transform: translateX(-35%);
+    display: flex;
+    justify-content: space-between;
+    width: 350px; /* Adjust width as needed */
+    z-index: 1;
+}
+
+.score {
+    font-size: 80px;
+    color: rgb(15, 58, 73);
+    font-family: 'Concert One';
+    font-weight: 1; /* Heavy bold */
+    pointer-events: none;
+    user-select: none;
+}
+
+#score-team1 {
+    /* Specific styling for team 1 score */
+}
+
+#score-team2 {
+    /* Specific styling for team 2 score */
+}
+
+.clock {
+    font-size: 60px;
+    color: rgb(29, 150, 195);
+    font-family: 'Concert One';
+    font-weight: 1; /* Heavy bold */
+    pointer-events: none;
+    user-select: none;
+    position: absolute;
+    top: 0; /* Adjust as needed */
+    left: 30%;
+    transform: translateX(0%);
+    transform: translateY(20%);
 }

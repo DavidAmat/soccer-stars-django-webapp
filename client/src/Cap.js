@@ -2,11 +2,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Arrow from './Arrow';
 
-const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, triggerMotion }) => {
+const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, triggerMotion, showIndex }) => {
     const [isMouseDown, setIsMouseDown] = useState(false);
     const [distance, setDistance] = useState(100); // Default distance
     const [angle_corrected, setAngleCorrected] = useState(0); // Default angle
     const capRef = useRef(null); // Reference to the cap div
+
+    // Determine background image based on cap index
+    const getBackgroundImage = () => {
+        if (index === 10) {
+            return 'url("/icons/ball.svg")';
+        } else if (index >= 5 && index <= 9) {
+            return 'url("/icons/bmw.svg")';
+        } else if (index >= 0 && index <= 4) {
+            return 'url("/icons/skoda.svg")';
+        } else {
+            return 'none'; // Default background in case of unexpected index
+        }
+    };
 
     const capStyle = {
         width: `${cap_radius * 2}px`,
@@ -14,7 +27,7 @@ const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, trigg
         position: 'absolute',
         left: `${initialPosition.x - cap_radius}px`,
         top: `${initialPosition.y - cap_radius}px`,
-        backgroundImage: 'url("/icons/cap_f1.svg")',
+        backgroundImage: getBackgroundImage(),
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         cursor: 'pointer'
@@ -28,7 +41,6 @@ const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, trigg
         color: 'black',
         fontWeight: 'bold',
         fontSize: '26px',
-        //font family
         fontFamily: 'Montserrat, Arial, sans-serif',
         pointerEvents: 'none', // Ensures the number does not interfere with clicking
         userSelect: 'none', // Prevents text selection
@@ -100,7 +112,7 @@ const Cap = ({ initialPosition, cap_radius, isSelected, onCapClick, index, trigg
     return (
         <div ref={capRef} style={capStyle} onClick={handleCapClick}>
             {isSelected && <Arrow cap_radius={cap_radius} centerX={centerX} centerY={centerY} distance={distance} angle_corrected={angle_corrected} />}
-            <div style={indexStyle}>{index}</div>
+            {showIndex && index !== 10 && <div style={indexStyle}>{index}</div>}
         </div>
     );
 };

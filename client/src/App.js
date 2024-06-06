@@ -8,6 +8,8 @@ const App = () => {
     const [capConfigs, setCapConfigs] = useState([]);
     const [selectedCap, setSelectedCap] = useState(null);
     const positionsRef = useRef([]);
+    const [time, setTime] = useState(0); // State for the clock
+    const [intervalId, setIntervalId] = useState(null);
     const [isMotionInProgress, setIsMotionInProgress] = useState(false);
 
 
@@ -55,6 +57,16 @@ const App = () => {
         ws.onerror = (error) => {
             console.error("WebSocket error:", error);
         };
+
+        // Reset the clock
+        setTime(0);
+        if (intervalId) {
+            clearInterval(intervalId);
+        }
+        const newIntervalId = setInterval(() => {
+            setTime(prevTime => prevTime + 1);
+        }, 1000);
+        setIntervalId(newIntervalId);
     };
 
     const handleCapClick = (index) => {
@@ -114,6 +126,13 @@ const App = () => {
             }
         }, 10); // 10ms delay between each timestep
     };
+    
+    // Clock
+    const formatTime = (time) => {
+        const minutes = String(Math.floor(time / 60)).padStart(2, '0');
+        const seconds = String(time % 60).padStart(2, '0');
+        return `${minutes}:${seconds}`;
+    };
 
     return (
         <div id="root">
@@ -133,9 +152,16 @@ const App = () => {
                         isSelected={selectedCap === index}
                         onCapClick={() => handleCapClick(index)}
                         triggerMotion={triggerMotion}
+                        // set showIndex to true for debugging
+                        showIndex={false}
                     />
                 ))}
             </div>
+            <div className="score-container">
+                    <div className="score" id="score-team1">0</div>
+                    <div className="clock">{formatTime(time)}</div>
+                    <div className="score" id="score-team2">0</div>
+                </div>
         </div>
     );
 };

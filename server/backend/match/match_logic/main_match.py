@@ -1,5 +1,6 @@
 import numpy as np
 from match.match_logic import game_entities, formations, motion
+from typing import List, Dict, Tuple
 
 
 class Match:
@@ -76,7 +77,7 @@ class Match:
     # ----------------------------------------------------------------- #
     #                  Main Function: submit_arrow                      #
     # ----------------------------------------------------------------- #
-    def move_cap(self, cap_idx, arrow_power, angle, X_last, truncate_motion_to_step=None):
+    def move_cap(self, cap_idx, arrow_power, angle, X_last, truncate_motion_to_step=None) -> Tuple[List, Dict]:
         """
         Main function callend in the MatchConsumer in consumers.py
         """
@@ -112,6 +113,7 @@ class Match:
         right_goal_x = self.motion.cr.gc.xfield_right
         radii_ball = self.R[-1]
         has_goal = False
+        has_goal_timestep = None
 
         for i, X in enumerate(X_hist):
             # Ball is always the last element in the X array
@@ -125,12 +127,14 @@ class Match:
                 self.score[1] += 1
                 print(f"Goal for right team at timestep {i}")
                 has_goal = True
+                has_goal_timestep = i
                 break
             elif x_ball - radii_ball > right_goal_x and not has_goal:
                 # If the ball inside the right goal, the left team has scored
                 self.score[0] += 1
                 print(f"Goal for left team at timestep {i}")
                 has_goal = True
+                has_goal_timestep = i
                 break
 
         # --------------------------------------- #
@@ -149,7 +153,14 @@ class Match:
             )
             X_hist.extend([X_restart])
 
-        return X_hist  # Return the list of X positions of the system at each timestep
+        # --------------------------------------- #
+        #  Metadata
+        # --------------------------------------- #
+        # Other information apart from the positions
+        metadata = {"has_goal": has_goal, "has_goal_timestep": has_goal_timestep}
+        print(f"Metadata: {metadata}")
+
+        return X_hist, metadata  # Return the list of X positions of the system at each timestep
 
     @staticmethod
     def adjust_coordinates(positions, scale_factor=(1, 1), margin=(0, 0)):
@@ -173,5 +184,6 @@ if __name__ == "__main__":
     arrow_power = 190
     angle = 15
 
-    X_hist = match.move_cap(cap_idx, arrow_power, angle, X_last=X_i)
+    X_hist, metadata = match.move_cap(cap_idx, arrow_power, angle, X_last=X_i)
     print(len(X_hist))
+    print(metadata)

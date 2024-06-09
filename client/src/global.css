@@ -66,7 +66,7 @@ body, html {
 .score-container {
     position: absolute;
     top: 20px; /* Adjust as needed */
-    left: 45%;
+    left: 900px;
     transform: translateX(-35%);
     display: flex;
     justify-content: space-between;
@@ -103,4 +103,15 @@ body, html {
     left: 30%;
     transform: translateX(0%);
     transform: translateY(20%);
+}
+
+.goal-message {
+    position: absolute;
+    top: 550px; /* Adjust as needed */
+    left: 1000px;
+    transform: translate(-50%, -50%);
+    font-size: 220px;
+    color: rgb(0, 255, 251);
+    font-family: 'Concert One', cursive;
+    z-index: 2;
 }

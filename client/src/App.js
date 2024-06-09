@@ -14,10 +14,13 @@ const App = () => {
     // Create the score as a state  
     const [score, setScore] = useState([0, 0]);
 
+    // Goal message
+    const [isGoal, setIsGoal] = useState(false); // Add this state variable
+
 
     const LEFT_MARGIN = 207;
     const HORIZONTAL_MARGIN = 412;
-    const TOP_MARGIN = 151;
+    const TOP_MARGIN = 153;
     const DOWNSCALE_FACTOR_X = (1920 - HORIZONTAL_MARGIN) / 1920;
     const DOWNSCALE_FACTOR_Y = (1080 - TOP_MARGIN) / 1080;
 
@@ -48,7 +51,7 @@ const App = () => {
             if (response.initial_positions) {
                 const configs = response.initial_positions.map((pos, index) => ({
                     pos: scalePosition(pos),
-                    radius: index === response.initial_positions.length - 1 ? 25 : 50
+                    radius: index === response.initial_positions.length - 1 ? 27 : 52
                 }));
                 setCapConfigs(configs);
                 positionsRef.current = response.initial_positions;
@@ -99,10 +102,14 @@ const App = () => {
 
         ws.onmessage = (event) => {
             const response = JSON.parse(event.data);
+
+            // Log response
+            console.log("Move Cap Response from WebSocket:", response);
+
             if (response.positions && response.score) {
                 setSelectedCap(null); // De-select the cap
                 const positions = response.positions;
-                updatePositionsOverTime(positions, response.score);
+                updatePositionsOverTime(positions, response.score, response.has_goal_timestep);
             }
             ws.close();
         };
@@ -112,28 +119,40 @@ const App = () => {
         };
     };
 
-    const updatePositionsOverTime = (positions, score) => {
+    const updatePositionsOverTime = (positions, score, hasGoalTimestep) => {
         let timestep = 0;
 
         const interval = setInterval(() => {
             if (timestep < positions.length) {
                 const configs = positions[timestep].map((pos, index) => ({
                     pos: scalePosition(pos),
-                    radius: index === positions[timestep].length - 1 ? 25 : 50
+                    radius: index === positions[timestep].length - 1 ? 27 : 52
                 }));
                 setCapConfigs(configs);
+
+                // GOAL MESSAGE
+                if (hasGoalTimestep == timestep) {
+                    setIsGoal(true);
+                }
+
                 timestep += 1;
             } else {
                 clearInterval(interval);
                 setIsMotionInProgress(false); // Allow user to interact again
 
-                // Remember the last positions
-                positionsRef.current = positions[positions.length - 1];
-
                 // Update the score
                 if (score) {
                     setScore(score);
                 }
+
+                // Sleep for 1 second showing the GOAL MESSAGE
+                setTimeout(() => {
+                    setIsGoal(false);
+                }, 1000); // 10000 ms (1000 timesteps with 10ms each)
+
+                // Remember the last positions
+                positionsRef.current = positions[positions.length - 1];
+
             }
         }, 10); // 10ms delay between each timestep
     };
@@ -172,7 +191,10 @@ const App = () => {
                     <div className="score" id="score-team1">{score[0]}</div>
                     <div className="clock">{formatTime(time)}</div>
                     <div className="score" id="score-team2">{score[1]}</div>
-                </div>
+            </div>
+            {isGoal && (
+                <div className="goal-message">GOAL !</div>
+            )}
         </div>
     );
 };

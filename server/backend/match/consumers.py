@@ -52,7 +52,12 @@ class MatchConsumer(AsyncWebsocketConsumer):
         X_last = np.array(data["positions"])
 
         # Move cap
-        X_hist = match.move_cap(cap_idx, arrow_power, angle, X_last)
+        X_hist, metadata = match.move_cap(cap_idx, arrow_power, angle, X_last)
 
-        response = {"positions": [x.tolist() for x in X_hist], "score": match.score}
+        response = {
+            "positions": [x.tolist() for x in X_hist], 
+            "score": match.score,
+            "has_goal": metadata.get("has_goal", False),
+            "has_goal_timestep": metadata.get("has_goal_timestep", None)
+        }
         await self.send(text_data=json.dumps(response))

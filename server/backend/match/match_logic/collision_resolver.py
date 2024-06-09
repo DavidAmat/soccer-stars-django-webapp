@@ -87,6 +87,10 @@ class CollisionResolver:
         self.R_dist = self.get_radius_distances_matrix()
         self.gc = GameConstants(R=R, w=self.w, h=self.h, D=goal_depth, g=goal_size)
 
+        # Collision dump factor (we will reduce the velocity by 20%)
+        self.collision_edge_dump_factor = 0.5
+        self.collision_cap_dump_factor = 0.7
+
     # ------------------------------------------------- #
     #       Get Final Velocity
     # ------------------------------------------------- #
@@ -143,12 +147,12 @@ class CollisionResolver:
         if l_new_velocity_components is not None and len(l_new_velocity_components) > 0:
             # For every idx of the cap, take the coordinate index we need to flip and the new velocity
             for idx, coord_idx, new_vel in l_new_velocity_components:
-                Vf[idx, coord_idx] = new_vel
+                Vf[idx, coord_idx] = new_vel * self.collision_edge_dump_factor
 
         # Iterate over the cap indices for the cap collisions
         if V_coll_cap_after is not None:
             for i, idx in enumerate(idx_coll_cap_final):
-                Vf[idx] = V_coll_cap_after[i]
+                Vf[idx] = V_coll_cap_after[i] * self.collision_cap_dump_factor
 
         return Vf
 
@@ -205,12 +209,12 @@ class CollisionResolver:
         if l_velocity_first_coll is not None and len(l_velocity_first_coll) > 0:
             # For every idx of the cap, take the coordinate index we need to flip and the new velocity
             for idx, coord_idx, new_vel in l_velocity_first_coll:
-                Vf[idx, coord_idx] = new_vel
+                Vf[idx, coord_idx] = new_vel * self.collision_edge_dump_factor
 
         # Iterate over the cap indices for the cap collisions
         if V_coll_cap_after is not None:
             for i, idx in enumerate(idx_coll_cap_final):
-                Vf[idx] = V_coll_cap_after[i]
+                Vf[idx] = V_coll_cap_after[i] * self.collision_cap_dump_factor
 
         # ********************************** #
         #   Second Collisions

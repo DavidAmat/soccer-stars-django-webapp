@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import Cap from './Cap';
 import './global.css'; // Import the global styles
 
@@ -79,12 +79,20 @@ const App = () => {
     };
 
     const handleCapClick = (index) => {
-        if (!isMotionInProgress) {
+        // Not allow selecting the ball, or select any cap if the motion is in progress
+        if (!isMotionInProgress && index !== positionsRef.current.length - 1) {
             setSelectedCap(selectedCap === index ? null : index);
         }
     };
 
     const triggerMotion = (index, distance, angle_corrected) => {
+        // Not allow moving the ball
+        if (index === positionsRef.current.length - 1) {
+            console.warn("Cannot move the ball directly");
+            return;
+        }
+
+
         const ws = new WebSocket(WEBSOCKET_URL);
 
         ws.onopen = () => {
@@ -131,7 +139,7 @@ const App = () => {
                 setCapConfigs(configs);
 
                 // GOAL MESSAGE
-                if (hasGoalTimestep == timestep) {
+                if (hasGoalTimestep === timestep) {
                     setIsGoal(true);
                 }
 

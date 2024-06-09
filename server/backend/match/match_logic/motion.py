@@ -96,9 +96,6 @@ class Motion:
         iteration = 0
         start_time = time.time()
         while iteration < max_iterations:
-            # print(f"iteration: {iteration}")
-            if iteration == 320:
-                print("Here")
             V_next = self.cr.resolve_field_collision(X=X, V=V)
             if iteration % friction_interval == 0:
                 V_next = self.apply_smooth_friction(V=V_next)

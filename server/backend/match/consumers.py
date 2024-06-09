@@ -3,13 +3,18 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from match.match_logic.main_match import Match
 import numpy as np
 
+import logging
+
+# Get a logger instance
+logger = logging.getLogger(__name__)
+
 
 match = Match()
 
 
 class MatchConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("Here: Established connection")
+        logger.info("CONNECT: Established connection")
         await self.accept()
 
     async def disconnect(self, close_code):
@@ -25,7 +30,7 @@ class MatchConsumer(AsyncWebsocketConsumer):
             await self.submit_arrow(data)
 
     async def create_formation(self, data):
-        print("Here: Creating formation")
+        logger.info("CREATE_FORMATION: Creating formation")
         left_formation = data["left_formation"]
         right_formation = data["right_formation"]
         debug_formation = data.get("debug_formation")
@@ -45,7 +50,7 @@ class MatchConsumer(AsyncWebsocketConsumer):
         await self.send(text_data=json.dumps(response))
 
     async def submit_arrow(self, data):
-        print("Submitting arrow")
+        logger.info("SUBMIT_ARROW: Submitting arrow")
         cap_idx = int(data["cap_idx"])
         arrow_power = int(data["arrow_power"])
         angle = int(data["angle"])
@@ -55,9 +60,9 @@ class MatchConsumer(AsyncWebsocketConsumer):
         X_hist, metadata = match.move_cap(cap_idx, arrow_power, angle, X_last)
 
         response = {
-            "positions": [x.tolist() for x in X_hist], 
+            "positions": [x.tolist() for x in X_hist],
             "score": match.score,
             "has_goal": metadata.get("has_goal", False),
-            "has_goal_timestep": metadata.get("has_goal_timestep", None)
+            "has_goal_timestep": metadata.get("has_goal_timestep", None),
         }
         await self.send(text_data=json.dumps(response))

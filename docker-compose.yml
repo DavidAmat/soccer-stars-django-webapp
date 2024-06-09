@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    networks:
+      - soccer-network
+
+  server:
+    build:
+      context: ./server/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - soccer-network
+
+networks:
+  soccer-network:
+    driver: bridge

@@ -1,7 +1,10 @@
 import numpy as np
 from match.match_logic import game_entities, formations, motion
 from typing import List, Dict, Tuple
+import logging
 
+# Get a logger instance
+logger = logging.getLogger(__name__)
 
 class Match:
     def __init__(
@@ -125,14 +128,14 @@ class Match:
             if x_ball + radii_ball < left_goal_x and not has_goal:
                 # If the ball inside the left goal, the right team has scored
                 self.score[1] += 1
-                print(f"Goal for right team at timestep {i}")
+                logger.info(f"Goal for right team at timestep {i}")
                 has_goal = True
                 has_goal_timestep = i
                 break
             elif x_ball - radii_ball > right_goal_x and not has_goal:
                 # If the ball inside the right goal, the left team has scored
                 self.score[0] += 1
-                print(f"Goal for left team at timestep {i}")
+                logger.info(f"Goal for left team at timestep {i}")
                 has_goal = True
                 has_goal_timestep = i
                 break
@@ -158,7 +161,7 @@ class Match:
         # --------------------------------------- #
         # Other information apart from the positions
         metadata = {"has_goal": has_goal, "has_goal_timestep": has_goal_timestep}
-        print(f"Metadata: {metadata}")
+        logger.info(f"Metadata: {metadata}")
 
         return X_hist, metadata  # Return the list of X positions of the system at each timestep
 
